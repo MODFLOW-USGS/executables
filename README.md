@@ -11,24 +11,27 @@ The programs and version numbers for the present release are
 
 | Program    | Version   |
 |---         |---|
-|    mf2000     |    1.19.01 |  
-|    mf2005     |    1.12.00 |  
-|    mfnwt      |    1.1.4   |  
-|    mfusg      |    1.5     |  
-|    zonbudusg  |    1.5     |  
-|    mf6        |    6.1.0   |  
-|    zbud6      |    6.1.0   |  
-|    swtv4      |    4.00.05 |  
-|    mp6        |    6.0.1   |  
-|    mp7        |    7.2.001 |  
-|    mflgr      |    2.0.0   |  
-|    mt3dms     |    5.3.0   |  
-|    mt3dusgs   |    1.0.1   |  
-|    vs2dt      |    3.3     |  
-|    triangle   |    1.6     |  
-|    gridgen    |    1.0.02  |  
-|    zonbud3    |    3.01    |  
-|    crt        |    1.3.1   |  
+| mf2000 | 1.19.01 |
+| mf2005 | 1.12.00 |
+| mfnwt | 1.2.0 |
+| mfusg | 1.5 |
+| zonbudusg | 1.5 |
+| mf6 | 6.1.1 |
+| zbud6 | 6.1.1 |
+| swtv4 | 4.00.05 |
+| mp6 | 6.0.1 |
+| mp7 | 7.2.001 |
+| mflgr | 2.0.0 |
+| mt3dms | 5.3.0 |
+| mt3dusgs | 1.1.0 |
+| vs2dt | 3.3 |
+| triangle | 1.6 |
+| gridgen | 1.0.02 |
+| zonbud3 | 3.01 |
+| crt | 1.3.1 |
+| gsflow | 2.1.0 |
+| sutra | 3.0 |
+
 
 
 
