@@ -2,7 +2,7 @@
 
 The purpose of this repository is to distribute binary executable programs for MODFLOW and related programs that will run on Windows, Mac, and Linux operating systems.  Executables for these different operating systems can be found under the [release](https://github.com/MODFLOW-USGS/executables/releases) tab above and are named:
 
-* [win64.zip](https://github.com/MODFLOW-USGS/executables/releases/download/=4.0/win64.zip)
+* [win64.zip](https://github.com/MODFLOW-USGS/executables/releases/download/4.0/win64.zip)
 * [win32.zip](https://github.com/MODFLOW-USGS/executables/releases/download/4.0/win32.zip)
 * [mac.zip](https://github.com/MODFLOW-USGS/executables/releases/download/4.0/mac.zip)
 * [linux.zip](https://github.com/MODFLOW-USGS/executables/releases/download/4.0/linux.zip)
