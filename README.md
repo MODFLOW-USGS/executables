@@ -9,8 +9,6 @@ The purpose of this repository is to distribute binary executable programs for M
 
 The programs and version numbers for the present release are
 
-The programs and version numbers for version 5.0 are
-
 | Program    | Version   |
 |---         |---|
 | mf2000 | 1.19.01 |
