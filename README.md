@@ -7,33 +7,31 @@ The purpose of this repository is to distribute binary executable programs for M
 * [mac.zip](https://github.com/MODFLOW-USGS/executables/releases/download/6.0/mac.zip)
 * [linux.zip](https://github.com/MODFLOW-USGS/executables/releases/download/6.0/linux.zip)
 
-The programs and version numbers for the present release are
+The programs, version numbers, and the date stamp on the downloaded file used to create the executables for the present release are
 
-| Program    | Version   |
-|---         |---|
-| mf2000 | 1.19.01 |
-| mf2005 | 1.12.00 |
-| mfnwt | 1.2.0 |
-| mfusg | 1.5 |
-| zonbudusg | 1.5 |
-| mf6 | 6.2.1 |
-| libmf6 | 6.2.1 |
-| zbud6 | 6.2.1 |
-| swtv4 | 4.00.05 |
-| mp6 | 6.0.1 |
-| mp7 | 7.2.001 |
-| mflgr | 2.0.0 |
-| mt3dms | 5.3.0 |
-| mt3dusgs | 1.1.0 |
-| vs2dt | 3.3 |
-| triangle | 1.6 |
-| gridgen | 1.0.02 |
-| zonbud3 | 3.01 |
-| crt | 1.3.1 |
-| gsflow | 2.1.0 |
-| sutra | 3.0 |
-
-
+| Program | Version | UTC Date |
+| ------- | ------- | ---- |
+| mf6 | 6.2.1 | 02/19/2021 |
+| zbud6 | 6.2.1 | 02/19/2021 |
+| libmf6 | 6.2.1 | 02/19/2021 |
+| mp7 | 7.2.001 | 10/23/2018 |
+| mt3dms | 5.3.0 | 02/21/2010 |
+| mt3dusgs | 1.1.0 | 07/12/2019 |
+| vs2dt | 3.3 | 04/02/2018 |
+| triangle | 1.6 | 07/29/2005 |
+| gridgen | 1.0.02 | 10/24/2018 |
+| crt | 1.3.1 | 04/11/2017 |
+| gsflow | 2.1.0 | 04/06/2020 |
+| sutra | 3.0 | 08/20/2019 |
+| mf2000 | 1.19.01 | 03/30/2010 |
+| mf2005 | 1.12.00 | 10/22/2018 |
+| mfusg | 1.5 | 02/27/2019 |
+| zonbudusg | 1.5 | 02/27/2019 |
+| swtv4 | 4.00.05 | 10/24/2018 |
+| mp6 | 6.0.1 | 10/23/2018 |
+| mflgr | 2.0.0 | 09/20/2013 |
+| zonbud3 | 3.01 | 10/25/2018 |
+| mfnwt | 1.2.0 | 03/03/2020 |
 
 
 
