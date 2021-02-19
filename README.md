@@ -16,7 +16,7 @@ The programs and version numbers for the present release are
 | mfnwt | 1.2.0 |
 | mfusg | 1.5 |
 | zonbudusg | 1.5 |
-| mf6 | 6.2.0 |
+| mf6 | 6.2.1 |
 | libmf6 | 6.2.1 |
 | zbud6 | 6.2.1 |
 | swtv4 | 4.00.05 |
