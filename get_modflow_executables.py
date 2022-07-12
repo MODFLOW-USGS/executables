@@ -3,7 +3,6 @@
 
 This script requires Python 3.6 or later.
 """
-
 import json
 import os
 import sys
@@ -16,7 +15,6 @@ from pathlib import Path
 owner = "MODFLOW-USGS"
 repo = "executables"
 api_url = f"https://api.github.com/repos/{owner}/{repo}"
-
 
 exe_suffix = ""
 if sys.platform.startswith("linux"):
@@ -34,6 +32,7 @@ else:
 
 
 def get_avail_releases():
+    """Get list of available releases."""
     with urllib.request.urlopen(f"{api_url}/releases") as resp:
         result = resp.read()
     releases = json.loads(result.decode())
@@ -43,6 +42,7 @@ def get_avail_releases():
 
 
 def download_and_extract(url, download_pth, bindir, force=False):
+    """Download and extract files to BINDIR."""
     if download_pth.is_file() and not force:
         print(
             f"using previous download '{download_pth}' "
@@ -58,6 +58,7 @@ def download_and_extract(url, download_pth, bindir, force=False):
 
 
 def print_columns(items, line_chars=79):
+    """Print columns of items."""
     item_chars = max(len(item) for item in items)
     num_cols = line_chars // item_chars
     num_rows = len(items) // num_cols
@@ -69,20 +70,34 @@ def print_columns(items, line_chars=79):
 
 
 def main(bindir, release_id="latest", force=False):
+    """Run main method."""
     if bindir == ":select":
         options = []
         # check if conda
-        conda_bin = Path(sys.prefix) / "conda-meta" / ".." / "bin"
+        conda_bin = (
+            Path(sys.prefix)
+            / "conda-meta"
+            / ".."
+            / ("Scripts" if ostag.startswith("win") else "bin")
+        )
         if conda_bin.exists() and os.access(conda_bin, os.W_OK):
             options.append(conda_bin.resolve())
         home_local_bin = Path.home() / ".local" / "bin"
-        if home_local_bin and os.access(home_local_bin, os.W_OK):
+        if home_local_bin.is_dir() and os.access(home_local_bin, os.W_OK):
             options.append(home_local_bin)
         local_bin = Path("/usr") / "local" / "bin"
-        if local_bin and os.access(local_bin, os.W_OK):
+        if local_bin.is_dir() and os.access(local_bin, os.W_OK):
             options.append(local_bin)
+        # Windows user
+        windowsapps_dir = Path(
+            os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\WindowsApps")
+        )
+        if windowsapps_dir.is_dir() and os.access(windowsapps_dir, os.W_OK):
+            options.append(windowsapps_dir)
         # any other possible locations?
         options_d = dict(enumerate(options, 1))
+        if not options_d:
+            raise RuntimeError("could not find any installable folders")
         print("select an extraction directory:")
         for iopt, opt in options_d.items():
             print(f"{iopt:2d}: {opt}")
