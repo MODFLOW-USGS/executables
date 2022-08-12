@@ -1,0 +1,21 @@
+name: Release CI
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  invalidate-caches:
+    name: Invalidate GitHub actions caches
+    runs-on: ubuntu-latest
+    steps:
+      - name: Invalidate Modflow6 cache
+        run: |
+          gh api --method DELETE -H "Accept: application/vnd.github+json" "/repos/MODFLOW-USGS/modflow6/actions/caches?key=modflow-exes"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Invalidate FloPy cache
+        run: |
+          gh api --method DELETE -H "Accept: application/vnd.github+json" "/repos/modflowpy/flopy/actions/caches?key=modflow-exes"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
