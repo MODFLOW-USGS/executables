@@ -1,0 +1,127 @@
+name: executables continuous integration
+
+on:
+  schedule:
+    - cron: '0 3 * * 3' # run at 3 AM UTC every Wednesday
+  push:
+    branches: [ master ]
+  pull_request:
+    branches:
+      - master
+jobs:
+
+  pymakeCI-os-intel:
+    name: pymake CI intel on different OSs
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            os_script: ifortvars_linux.sh
+          - os: macos-latest
+            os_script: ifortvars_macos.sh
+          - os: windows-2019
+            os_script: ifortvars_windows.bat
+    defaults:
+      run:
+        shell: bash -l {0}
+    env:
+      WINDOWS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/17392/w_HPCKit_p_2021.1.0.2682_offline.exe
+      LINUX_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/17427/l_HPCKit_p_2021.1.0.2684_offline.sh
+      MACOS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/17398/m_HPCKit_p_2021.1.0.2681_offline.dmg
+      WINDOWS_FORTRAN_COMPONENTS: intel.oneapi.win.ifort-compiler
+      LINUX_FORTRAN_COMPONENTS_WEB: intel.oneapi.lin.ifort-compiler
+      MACOS_FORTRAN_COMPONENTS: intel.oneapi.mac.ifort-compiler
+      WINDOWS_CPP_COMPONENTS: intel.oneapi.win.cpp-compiler
+      LINUX_CPP_COMPONENTS_WEB: intel.oneapi.lin.dpcpp-cpp-compiler-pro
+      MACOS_CPP_COMPONENTS: intel.oneapi.mac.cpp-compiler
+      FC: ifort
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2.5.0
+
+      - name: Install Conda environment
+        uses: mamba-org/provision-with-micromamba@main
+        with:
+          cache-downloads: true
+          cache-env: true
+
+      - name: Print Python package versions
+        run: |
+          pip list
+
+      - name: Install python packages
+        run: |
+          .github/common/install-python.sh
+
+      - name: cache install intel compilers on linux
+        if: runner.os == 'Linux'
+        id: cache-install-linux
+        uses: actions/cache@v2
+        with:
+          path: |
+            /opt/intel/oneapi/compiler
+          key: install-${{ env.LINUX_HPCKIT_URL }}-${{ env.LINUX_CPP_COMPONENTS_WEB }}-${{ env.LINUX_FORTRAN_COMPONENTS_WEB }}-compiler-${{ hashFiles('**/.github/intel-scripts/cache_exclude_linux.sh') }}
+
+      - name: install intel compilers on linux
+        if: runner.os == 'Linux' && steps.cache-install-linux.outputs.cache-hit != 'true'
+        run: |
+          .github/intel-scripts/install_linux.sh $LINUX_HPCKIT_URL $LINUX_CPP_COMPONENTS_WEB:$LINUX_FORTRAN_COMPONENTS_WEB
+
+      - name: cache install intel compilers on macos
+        if: runner.os == 'macOS'
+        id: cache-install-macos
+        uses: actions/cache@v2
+        with:
+          path: /opt/intel/oneapi
+          key: install-${{ env.MACOS_HPCKIT_URL }}--${{ env.MACOS_CPP_COMPONENTS }}-${{ env.MACOS_FORTRAN_COMPONENTS }}
+
+      - name: install intel compilers on macos
+        if: runner.os == 'macOS' && steps.cache-install-macos.outputs.cache-hit != 'true'
+        run: |
+          .github/intel-scripts/install_macos.sh $MACOS_HPCKIT_URL $MACOS_CPP_COMPONENTS:$MACOS_FORTRAN_COMPONENTS
+
+      - name: cache install ifort on windows
+        if: runner.os == 'Windows'
+        id: cache-install-windows
+        uses: actions/cache@v2
+        with:
+          path: C:\Program Files (x86)\Intel\oneAPI\compiler
+          key: install-${{ env.WINDOWS_HPCKIT_URL }}-${{ env.WINDOWS_CPP_COMPONENTS }}-${{ env.WINDOWS_FORTRAN_COMPONENTS }}-compiler-${{ hashFiles('**/.github/intel-scripts/cache_exclude_windows.sh') }}
+
+      - name: install intel compilers on windows
+        if: runner.os == 'Windows' && steps.cache-install-windows.outputs.cache-hit != 'true'
+        run: |
+          .github/intel-scripts/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_CPP_COMPONENTS:$WINDOWS_FORTRAN_COMPONENTS
+
+      - name: activate intel and test on linux and macOS
+        if: runner.os == 'Linux' || runner.os == 'macOS'
+        env:
+          CC: icc
+        run: |
+          .github/intel-scripts/${{ matrix.os_script }}
+
+      - name: activate intel and test on Windows
+        if: runner.os == 'Windows'
+        env:
+          CC: icl
+        shell: cmd
+        run: |
+          call ".github/intel-scripts/ifortvars_windows.bat"
+          python .github/common/build_executables.py
+
+      - name: list whats available - temporary
+        run: |
+          ls -a 
+
+      - name: exclude unused files from cache on windows
+        if: runner.os == 'Windows' && steps.cache-install-windows.outputs.cache-hit != 'true'
+        run: |
+          .github/intel-scripts/cache_exclude_windows.sh
+
+      - name: exclude unused files from cache on linux
+        if: runner.os == 'Linux' && steps.cache-install-linux.outputs.cache-hit != 'true'
+        run: |
+          .github/intel-scripts/cache_exclude_linux.sh
