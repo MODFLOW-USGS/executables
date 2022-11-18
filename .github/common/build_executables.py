@@ -31,7 +31,7 @@ if __name__ == "__main__":
     path = (pl.Path(os.path.dirname(pymake.__file__)) / "../").resolve()
     print(f"path to pymake: {path}")
 
-    file_path = pl.Path("buildall.py")
+    file_path = pl.Path(".github/common/buildall.py")
 
     cmds = [
         "python",
