@@ -171,14 +171,15 @@ jobs:
         with:
           python-version: 3.9
 
-      - uses: oprypin/find-latest-tag@v1
+      - name: Get the latest release tag
+        uses: oprypin/find-latest-tag@v1
         with:
           repository: MODFLOW-USGS/executables  # The repository to scan.
           releases-only: true  # We know that all relevant tags have a GitHub release for them.
         id: executables  # The step ID to refer to later.
 
       - name: Set latest release tag as a environment variable
-      - run: |
+        run: |
           echo "MODFLOW-USGS/executables is at version ${{ steps.executables.outputs.tag }}"
           echo "RELEASE_VERSION=${{ steps.executables.outputs.tag }}" >> $GITHUB_ENV
 
