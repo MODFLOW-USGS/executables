@@ -38,8 +38,8 @@ jobs:
       MACOS_CPP_COMPONENTS: intel.oneapi.mac.cpp-compiler
       FC: ifort
 
-    if:
-      github.event_name == 'push'
+#    if:
+#      github.event_name == 'push'
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -155,15 +155,14 @@ jobs:
   # make the release if previous job was successful
   release:
     name: Make a release
-    #    needs: executables-intel
+    needs: executables-intel
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash
 
-    #    if:
-    #      github.event_name == 'push'
-
+#    if:
+#      github.event_name == 'push'
     steps:
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -185,11 +184,18 @@ jobs:
           echo "MODFLOW-USGS/executables current version is $RELEASE_VERSION"
           echo "MODFLOW-USGS/executables next version is $NEXT_VERSION"
 
-      - name: List all environment variables
-        run: |
-          env
+      - name: Download a Build Artifact
+        uses: actions/download-artifact@v3.0.0
+        with:
+          name: release_build
+          path: ./release_build/
 
-      - name: Create the BodyFile markdown file
+      - name: List files in the artifact directory
+        run: |
+          pwd
+          ls -l ./release_build/
+
+      - name: Create the Header for BodyFile markdown file
         shell: python
         run: |
           import os
@@ -197,44 +203,38 @@ jobs:
           line = "The programs, version numbers, and the date "
           line += "stamp on the downloaded file used to create the "
           line += f"executables for version {next_version} are\n\n"
-          with open('BodyFile.md', "w") as file:
+          with open('Header.md', "w") as file:
               file.write(line)
+
+      - name: Build of BodyFile.md
+        run: |
+          cat Header.md
 
       - name: List contents of BodyFile.md
         run: |
+          cat Header.md ./release_build/code.md > BodyFile.md
           cat BodyFile.md
+          rm ./release_build/code.md
           
 
+      - name: Create a Release
+        uses: ncipollo/release-action@v1.11.2
+        with:
+          tag: $NEXT_VERSION
+          name: "MODFLOW and related programs binary executables"
+          bodyFile: ./BodyFile.md
+          draft: true
+          allowUpdates: true
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-#      - name: Download a Build Artifact
-#        uses: actions/download-artifact@v3.0.0
-#        with:
-#          name: release_build
-#          path: ./release_build/
-#
-#      - name: List files in the artifact directory
-#        run: |
-#          pwd
-#          ls -l ./release_build/
-#
-#      - name: Create a Release
-#        uses: ncipollo/release-action@v1.11.2
-#        with:
-#          tag: ${{ steps.current-time.outputs.formattedTime }}
-#          name: "MODFLOW and related programs binary executables"
-#          body: "OneAPI version of Intel ifort compiler used to compile executables for all operating systems."
-#          draft: false
-#          allowUpdates: true
-#          token: ${{ secrets.GITHUB_TOKEN }}
-#
-#      - name: Upload compiled executables to the latest GitHub release
-#        uses: svenstaro/upload-release-action@2.3.0
-#        with:
-#          repo_token: ${{ secrets.GITHUB_TOKEN }}
-#          file: ./release_build/*
-#          tag: ${{ steps.current-time.outputs.formattedTime }}
-#          overwrite: true
-#          file_glob: true
+      - name: Upload compiled executables to the latest GitHub release
+        uses: svenstaro/upload-release-action@2.3.0
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ./release_build/*
+          tag: $NEXT_VERSION
+          overwrite: true
+          file_glob: true
 #
 #      - name: Delete Artifact
 #        uses: GeekyEggo/delete-artifact@v1.0.0
