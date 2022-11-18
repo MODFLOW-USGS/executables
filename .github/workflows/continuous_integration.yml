@@ -14,13 +14,16 @@ jobs:
         include:
           - os: ubuntu-latest
             os_script: ifortvars_linux.sh
+            artifact_name: linux.zip
           - os: macos-latest
             os_script: ifortvars_macos.sh
+            artifact_name: mac.zip
           - os: windows-2019
             os_script: ifortvars_windows.bat
+            artifact_name: win64.zip
     defaults:
       run:
-        shell: bash -l {0}
+        shell: bash
     env:
       WINDOWS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18976/w_HPCKit_p_2022.3.1.19755_offline.exe
       LINUX_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18975/l_HPCKit_p_2022.3.1.16997_offline.sh
@@ -37,11 +40,17 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Install Conda environment
-        uses: mamba-org/provision-with-micromamba@main
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
-          cache-downloads: true
-          cache-env: true
+          python-version: 3.9
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install wheel
+          pip install https://github.com/modflowpy/pymake/zipball/master
 
       - name: Print Python package versions
         run: |
@@ -98,7 +107,7 @@ jobs:
         if: runner.os == 'Windows'
         env:
           CC: icl
-        shell: cmd /C CALL {0}
+        shell: cmd
         run: |
           call ".github/intel-scripts/ifortvars_windows.bat"
           python .github/common/build_executables.py
@@ -106,6 +115,22 @@ jobs:
       - name: list whats available - temporary
         run: |
           ls -a 
+
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          name: nightly
+          path: |
+            ./${{ matrix.artifact_name }}
+
+      - name: Upload additional Build Artifacts
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v3.1.0
+        with:
+          name: nightly
+          path: |
+            ./code.json
+            ./code.md
 
       - name: exclude unused files from cache on windows
         if: runner.os == 'Windows' && steps.cache-install-windows.outputs.cache-hit != 'true'
