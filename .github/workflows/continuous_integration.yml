@@ -50,7 +50,7 @@ jobs:
       - name: cache install intel compilers on linux
         if: runner.os == 'Linux'
         id: cache-install-linux
-        uses: actions/cache@v2
+        uses: actions/cache@v3.0.11
         with:
           path: |
             /opt/intel/oneapi/compiler
@@ -64,7 +64,7 @@ jobs:
       - name: cache install intel compilers on macos
         if: runner.os == 'macOS'
         id: cache-install-macos
-        uses: actions/cache@v2
+        uses: actions/cache@v3.0.11
         with:
           path: /opt/intel/oneapi
           key: install-${{ env.MACOS_HPCKIT_URL }}--${{ env.MACOS_CPP_COMPONENTS }}-${{ env.MACOS_FORTRAN_COMPONENTS }}
@@ -77,7 +77,7 @@ jobs:
       - name: cache install ifort on windows
         if: runner.os == 'Windows'
         id: cache-install-windows
-        uses: actions/cache@v2
+        uses: actions/cache@v3.0.11
         with:
           path: C:\Program Files (x86)\Intel\oneAPI\compiler
           key: install-${{ env.WINDOWS_HPCKIT_URL }}-${{ env.WINDOWS_CPP_COMPONENTS }}-${{ env.WINDOWS_FORTRAN_COMPONENTS }}-compiler-${{ hashFiles('**/.github/intel-scripts/cache_exclude_windows.sh') }}
