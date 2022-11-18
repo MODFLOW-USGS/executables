@@ -218,23 +218,26 @@ jobs:
           
 
       - name: Create a Release
+        if: github.event_name == 'push'
         uses: ncipollo/release-action@v1.11.2
         with:
           tag: $NEXT_VERSION
           name: "MODFLOW and related programs binary executables"
-          bodyFile: ./BodyFile.md
-          draft: true
+          bodyFile: "./BodyFile.md"
+          artifacts: "./release_build/*"
+          draft: false
           allowUpdates: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload compiled executables to the latest GitHub release
-        uses: svenstaro/upload-release-action@2.3.0
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ./release_build/*
-          tag: $NEXT_VERSION
-          overwrite: true
-          file_glob: true
+#      - name: Upload compiled executables to the latest GitHub release
+#        if: github.event_name == 'push'
+#        uses: svenstaro/upload-release-action@2.3.0
+#        with:
+#          repo_token: ${{ secrets.GITHUB_TOKEN }}
+#          file: ./release_build/*
+#          tag: $NEXT_VERSION
+#          overwrite: true
+#          file_glob: true
 #
 #      - name: Delete Artifact
 #        uses: GeekyEggo/delete-artifact@v1.0.0
