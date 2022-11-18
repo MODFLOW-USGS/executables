@@ -38,6 +38,8 @@ jobs:
       MACOS_CPP_COMPONENTS: intel.oneapi.mac.cpp-compiler
       FC: ifort
 
+    if:
+      github.event_name == 'push'
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -182,6 +184,8 @@ jobs:
         run: |
           echo "MODFLOW-USGS/executables is at version ${{ steps.executables.outputs.tag }}"
           echo "RELEASE_VERSION=${{ steps.executables.outputs.tag }}" >> $GITHUB_ENV
+          echo "NEXT_VERSION=$((${{ steps.executables.outputs.tag }}+1.0))" >> $GITHUB_ENV
+          env
 
 #      - name: Download a Build Artifact
 #        uses: actions/download-artifact@v3.0.0
@@ -195,10 +199,10 @@ jobs:
 #          ls -l ./release_build/
 #
 #      - name: Create a Release
-#        uses: ncipollo/release-action@v1.10.0
+#        uses: ncipollo/release-action@v1.11.2
 #        with:
 #          tag: ${{ steps.current-time.outputs.formattedTime }}
-#          name: ${{ steps.current-time.outputs.formattedTime }} nightly build
+#          name: "MODFLOW and related programs binary executables"
 #          body: "OneAPI version of Intel ifort compiler used to compile executables for all operating systems."
 #          draft: false
 #          allowUpdates: true
