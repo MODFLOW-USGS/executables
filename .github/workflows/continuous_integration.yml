@@ -183,17 +183,17 @@ jobs:
           echo "MODFLOW-USGS/executables is at version ${{ steps.executables.outputs.tag }}"
           echo "RELEASE_VERSION=${{ steps.executables.outputs.tag }}" >> $GITHUB_ENV
 
-      - name: Download a Build Artifact
-        uses: actions/download-artifact@v3.0.0
-        with:
-          name: release_build
-          path: ./release_build/
-
-      - name: List files in the artifact directory
-        run: |
-          pwd
-          ls -l ./release_build/
-
+#      - name: Download a Build Artifact
+#        uses: actions/download-artifact@v3.0.0
+#        with:
+#          name: release_build
+#          path: ./release_build/
+#
+#      - name: List files in the artifact directory
+#        run: |
+#          pwd
+#          ls -l ./release_build/
+#
 #      - name: Create a Release
 #        uses: ncipollo/release-action@v1.10.0
 #        with:
