@@ -184,7 +184,11 @@ jobs:
         run: |
           echo "MODFLOW-USGS/executables is at version ${{ steps.executables.outputs.tag }}"
           echo "RELEASE_VERSION=${{ steps.executables.outputs.tag }}" >> $GITHUB_ENV
-          echo "NEXT_VERSION=$((${{ steps.executables.outputs.tag }}+1.0))" >> $GITHUB_ENV
+          v=`echo "${{ steps.executables.outputs.tag }} + 1.0" | bc`
+          echo "NEXT_VERSION=$v" >> $GITHUB_ENV
+
+      - name: List all environment variables
+        run: |
           env
 
 #      - name: Download a Build Artifact
