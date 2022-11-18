@@ -1,4 +1,4 @@
-name: executables
+name: build_executables
 channels:
   - conda-forge
 dependencies:

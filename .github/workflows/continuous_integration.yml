@@ -47,10 +47,6 @@ jobs:
         run: |
           pip list
 
-      - name: Install python packages
-        run: |
-          .github/common/install-python.sh
-
       - name: cache install intel compilers on linux
         if: runner.os == 'Linux'
         id: cache-install-linux
