@@ -165,9 +165,6 @@ jobs:
     #      github.event_name == 'push'
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -182,14 +179,32 @@ jobs:
 
       - name: Set latest release tag as a environment variable
         run: |
-          echo "MODFLOW-USGS/executables is at version ${{ steps.executables.outputs.tag }}"
           echo "RELEASE_VERSION=${{ steps.executables.outputs.tag }}" >> $GITHUB_ENV
           v=`echo "${{ steps.executables.outputs.tag }} + 1.0" | bc`
           echo "NEXT_VERSION=$v" >> $GITHUB_ENV
+          echo "MODFLOW-USGS/executables current version is $RELEASE_VERSION"
+          echo "MODFLOW-USGS/executables next version is $NEXT_VERSION"
 
       - name: List all environment variables
         run: |
           env
+
+      - name: Create the BodyFile markdown file
+        shell: python
+        run: |
+          import os
+          next_version = os.getenv('NEXT_VERSION') 
+          line = "The programs, version numbers, and the date "
+          line += "stamp on the downloaded file used to create the "
+          line += f"executables for version {next_version} are\n\n"
+          with open('BodyFile.md', "w") as file:
+              file.write(line)
+
+      - name: List contents of BodyFile.md
+        run: |
+          cat BodyFile.md
+          
+
 
 #      - name: Download a Build Artifact
 #        uses: actions/download-artifact@v3.0.0
