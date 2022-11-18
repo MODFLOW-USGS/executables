@@ -1,6 +1,8 @@
 name: executables continuous integration
 
 on:
+  schedule:
+    - cron: '0 3 * * 3' # run at 3 AM UTC every Wednesday
   push:
     branches: [ master ]
   pull_request:
@@ -39,6 +41,16 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+
+      - uses: oprypin/find-latest-tag@v1
+        with:
+          repository: MODFLOW-USGS/executables  # The repository to scan.
+          releases-only: true  # We know that all relevant tags have a GitHub release for them.
+        id: executables  # The step ID to refer to later.
+
+      - run: |
+          echo "MODFLOW-USGS/executables is at version ${{ steps.executables.outputs.tag }}"
+          echo "RELEASE_VERSION=${{ steps.executables.outputs.tag }}" >> $GITHUB_ENV
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -82,7 +94,7 @@ jobs:
         run: |
           .github/intel-scripts/install_macos.sh $MACOS_HPCKIT_URL $MACOS_CPP_COMPONENTS:$MACOS_FORTRAN_COMPONENTS
 
-      - name: cache install ifort on windows
+      - name: cache install intel compilers on windows
         if: runner.os == 'Windows'
         id: cache-install-windows
         uses: actions/cache@v3.0.11
@@ -95,14 +107,14 @@ jobs:
         run: |
           .github/intel-scripts/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_CPP_COMPONENTS:$WINDOWS_FORTRAN_COMPONENTS
 
-      - name: activate intel and build executables on linux and macOS
+      - name: activate intel compilers and build executables on linux and macOS
         if: runner.os == 'Linux' || runner.os == 'macOS'
         env:
           CC: icc
         run: |
           .github/intel-scripts/${{ matrix.os_script }}
 
-      - name: activate intel and build executables on Windows
+      - name: activate intel compilers and build executables on Windows
         if: runner.os == 'Windows'
         env:
           CC: icl
@@ -111,14 +123,10 @@ jobs:
           call ".github/intel-scripts/ifortvars_windows.bat"
           python .github/common/build_executables.py
 
-      - name: list whats available - temporary
-        run: |
-          ls -a 
-
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v3.1.1
         with:
-          name: nightly
+          name: release_build
           path: |
             ./${{ matrix.artifact_name }}
 
@@ -126,7 +134,7 @@ jobs:
         if: runner.os == 'Linux'
         uses: actions/upload-artifact@v3.1.0
         with:
-          name: nightly
+          name: release_build
           path: |
             ./code.json
             ./code.md
@@ -140,3 +148,71 @@ jobs:
         if: runner.os == 'Linux' && steps.cache-install-linux.outputs.cache-hit != 'true'
         run: |
           .github/intel-scripts/cache_exclude_linux.sh
+
+
+  # make the release if previous job was successful
+  release:
+    name: Make a release
+    #    needs: executables-intel
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    #    if:
+    #      github.event_name == 'push'
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - uses: oprypin/find-latest-tag@v1
+        with:
+          repository: MODFLOW-USGS/executables  # The repository to scan.
+          releases-only: true  # We know that all relevant tags have a GitHub release for them.
+        id: executables  # The step ID to refer to later.
+
+      - name: Set latest release tag as a environment variable
+      - run: |
+          echo "MODFLOW-USGS/executables is at version ${{ steps.executables.outputs.tag }}"
+          echo "RELEASE_VERSION=${{ steps.executables.outputs.tag }}" >> $GITHUB_ENV
+
+      - name: Download a Build Artifact
+        uses: actions/download-artifact@v3.0.0
+        with:
+          name: release_build
+          path: ./release_build/
+
+      - name: List files in the artifact directory
+        run: |
+          pwd
+          ls -l ./release_build/
+
+#      - name: Create a Release
+#        uses: ncipollo/release-action@v1.10.0
+#        with:
+#          tag: ${{ steps.current-time.outputs.formattedTime }}
+#          name: ${{ steps.current-time.outputs.formattedTime }} nightly build
+#          body: "OneAPI version of Intel ifort compiler used to compile executables for all operating systems."
+#          draft: false
+#          allowUpdates: true
+#          token: ${{ secrets.GITHUB_TOKEN }}
+#
+#      - name: Upload compiled executables to the latest GitHub release
+#        uses: svenstaro/upload-release-action@2.3.0
+#        with:
+#          repo_token: ${{ secrets.GITHUB_TOKEN }}
+#          file: ./release_build/*
+#          tag: ${{ steps.current-time.outputs.formattedTime }}
+#          overwrite: true
+#          file_glob: true
+#
+#      - name: Delete Artifact
+#        uses: GeekyEggo/delete-artifact@v1.0.0
+#        with:
+#          name: release_build
