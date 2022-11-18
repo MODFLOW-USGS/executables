@@ -1,0 +1,13 @@
+name: executables
+channels:
+  - conda-forge
+dependencies:
+  # required
+  - python>=3.7
+  - pip
+
+  - numpy
+  - matplotlib=3.4.3
+
+  - pip:
+      - git+https://github.com/modflowpy/pymake@develop
