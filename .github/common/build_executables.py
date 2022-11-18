@@ -28,12 +28,10 @@ def get_cctag() -> str:
 
 
 if __name__ == "__main__":
-    path = (pl.Path(os.path.dirname(pymake.__file__))).resolve()
+    path = (pl.Path(os.path.dirname(pymake.__file__)) / "../").resolve()
     print(f"path to pymake: {path}")
-    file_path = path / "examples/buildall.py"
 
-    cmds = ["ls", "-lha", str(path)]
-    subprocess.run(cmds)
+    file_path = pl.Path("buildall.py")
 
     cmds = [
         "python",
