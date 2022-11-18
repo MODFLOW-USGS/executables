@@ -32,7 +32,7 @@ if __name__ == "__main__":
     print(f"path to pymake: {path}")
     file_path = path / "examples/buildall.py"
 
-    cmds = ["ls", "-a", str(file_path)]
+    cmds = ["ls", "-lha", str(path)]
     subprocess.run(cmds)
 
     cmds = [
@@ -46,8 +46,13 @@ if __name__ == "__main__":
     ]
 
     retries = 3
+    success = False
     for idx in range(retries):
         p = subprocess.run(cmds)
         if p.returncode == 0:
+            success = True
             break
         print(f"run {idx + 1}/{retries} failed...rerunning")
+
+    if not success:
+        raise RuntimeError("could not build the executables")
