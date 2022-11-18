@@ -1,6 +1,8 @@
 name: executables continuous integration
 
 on:
+  schedule:
+    - cron: '0 3 * * 3' # run at 3 AM UTC every Wednesday
   push:
     branches: [ master ]
   pull_request:
@@ -14,17 +16,20 @@ jobs:
         include:
           - os: ubuntu-latest
             os_script: ifortvars_linux.sh
+            artifact_name: linux.zip
           - os: macos-latest
             os_script: ifortvars_macos.sh
+            artifact_name: mac.zip
           - os: windows-2019
             os_script: ifortvars_windows.bat
+            artifact_name: win64.zip
     defaults:
       run:
-        shell: bash -l {0}
+        shell: bash
     env:
-      WINDOWS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/17392/w_HPCKit_p_2021.1.0.2682_offline.exe
-      LINUX_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/17427/l_HPCKit_p_2021.1.0.2684_offline.sh
-      MACOS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/17398/m_HPCKit_p_2021.1.0.2681_offline.dmg
+      WINDOWS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18976/w_HPCKit_p_2022.3.1.19755_offline.exe
+      LINUX_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18975/l_HPCKit_p_2022.3.1.16997_offline.sh
+      MACOS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18977/m_HPCKit_p_2022.3.1.15344_offline.dmg
       WINDOWS_FORTRAN_COMPONENTS: intel.oneapi.win.ifort-compiler
       LINUX_FORTRAN_COMPONENTS_WEB: intel.oneapi.lin.ifort-compiler
       MACOS_FORTRAN_COMPONENTS: intel.oneapi.mac.ifort-compiler
@@ -33,28 +38,41 @@ jobs:
       MACOS_CPP_COMPONENTS: intel.oneapi.mac.cpp-compiler
       FC: ifort
 
+#    if:
+#      github.event_name == 'push'
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2.5.0
+        uses: actions/checkout@v3
 
-      - name: Install Conda environment
-        uses: mamba-org/provision-with-micromamba@main
+      - uses: oprypin/find-latest-tag@v1
         with:
-          cache-downloads: true
-          cache-env: true
+          repository: MODFLOW-USGS/executables  # The repository to scan.
+          releases-only: true  # We know that all relevant tags have a GitHub release for them.
+        id: executables  # The step ID to refer to later.
+
+      - run: |
+          echo "MODFLOW-USGS/executables is at version ${{ steps.executables.outputs.tag }}"
+          echo "RELEASE_VERSION=${{ steps.executables.outputs.tag }}" >> $GITHUB_ENV
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install wheel
+          pip install https://github.com/modflowpy/pymake/zipball/master
 
       - name: Print Python package versions
         run: |
           pip list
 
-      - name: Install python packages
-        run: |
-          .github/common/install-python.sh
-
       - name: cache install intel compilers on linux
         if: runner.os == 'Linux'
         id: cache-install-linux
-        uses: actions/cache@v2
+        uses: actions/cache@v3.0.11
         with:
           path: |
             /opt/intel/oneapi/compiler
@@ -68,7 +86,7 @@ jobs:
       - name: cache install intel compilers on macos
         if: runner.os == 'macOS'
         id: cache-install-macos
-        uses: actions/cache@v2
+        uses: actions/cache@v3.0.11
         with:
           path: /opt/intel/oneapi
           key: install-${{ env.MACOS_HPCKIT_URL }}--${{ env.MACOS_CPP_COMPONENTS }}-${{ env.MACOS_FORTRAN_COMPONENTS }}
@@ -78,10 +96,10 @@ jobs:
         run: |
           .github/intel-scripts/install_macos.sh $MACOS_HPCKIT_URL $MACOS_CPP_COMPONENTS:$MACOS_FORTRAN_COMPONENTS
 
-      - name: cache install ifort on windows
+      - name: cache install intel compilers on windows
         if: runner.os == 'Windows'
         id: cache-install-windows
-        uses: actions/cache@v2
+        uses: actions/cache@v3.0.11
         with:
           path: C:\Program Files (x86)\Intel\oneAPI\compiler
           key: install-${{ env.WINDOWS_HPCKIT_URL }}-${{ env.WINDOWS_CPP_COMPONENTS }}-${{ env.WINDOWS_FORTRAN_COMPONENTS }}-compiler-${{ hashFiles('**/.github/intel-scripts/cache_exclude_windows.sh') }}
@@ -91,14 +109,14 @@ jobs:
         run: |
           .github/intel-scripts/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_CPP_COMPONENTS:$WINDOWS_FORTRAN_COMPONENTS
 
-      - name: activate intel and test on linux and macOS
+      - name: activate intel compilers and build executables on linux and macOS
         if: runner.os == 'Linux' || runner.os == 'macOS'
         env:
           CC: icc
         run: |
           .github/intel-scripts/${{ matrix.os_script }}
 
-      - name: activate intel and test on Windows
+      - name: activate intel compilers and build executables on Windows
         if: runner.os == 'Windows'
         env:
           CC: icl
@@ -107,9 +125,21 @@ jobs:
           call ".github/intel-scripts/ifortvars_windows.bat"
           python .github/common/build_executables.py
 
-      - name: list whats available - temporary
-        run: |
-          ls -a 
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          name: release_build
+          path: |
+            ./${{ matrix.artifact_name }}
+
+      - name: Upload additional Build Artifacts
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v3.1.0
+        with:
+          name: release_build
+          path: |
+            ./code.json
+            ./code.md
 
       - name: exclude unused files from cache on windows
         if: runner.os == 'Windows' && steps.cache-install-windows.outputs.cache-hit != 'true'
@@ -120,3 +150,96 @@ jobs:
         if: runner.os == 'Linux' && steps.cache-install-linux.outputs.cache-hit != 'true'
         run: |
           .github/intel-scripts/cache_exclude_linux.sh
+
+
+  # make the release if previous job was successful
+  release:
+    name: Make a release
+    needs: executables-intel
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+#    if:
+#      github.event_name == 'push'
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: Get the latest release tag
+        uses: oprypin/find-latest-tag@v1
+        with:
+          repository: MODFLOW-USGS/executables  # The repository to scan.
+          releases-only: true  # We know that all relevant tags have a GitHub release for them.
+        id: executables  # The step ID to refer to later.
+
+      - name: Set latest release tag as a environment variable
+        run: |
+          echo "RELEASE_VERSION=${{ steps.executables.outputs.tag }}" >> $GITHUB_ENV
+          v=`echo "${{ steps.executables.outputs.tag }} + 1.0" | bc`
+          echo "NEXT_VERSION=$v" >> $GITHUB_ENV
+          echo "MODFLOW-USGS/executables current version is $RELEASE_VERSION"
+          echo "MODFLOW-USGS/executables next version is $NEXT_VERSION"
+
+      - name: Download a Build Artifact
+        uses: actions/download-artifact@v3.0.0
+        with:
+          name: release_build
+          path: ./release_build/
+
+      - name: List files in the artifact directory
+        run: |
+          pwd
+          ls -l ./release_build/
+
+      - name: Create the Header for BodyFile markdown file
+        shell: python
+        run: |
+          import os
+          next_version = os.getenv('NEXT_VERSION') 
+          line = "The programs, version numbers, and the date "
+          line += "stamp on the downloaded file used to create the "
+          line += f"executables for version {next_version} are\n\n"
+          with open('Header.md', "w") as file:
+              file.write(line)
+
+      - name: Build of BodyFile.md
+        run: |
+          cat Header.md
+
+      - name: List contents of BodyFile.md
+        run: |
+          cat Header.md ./release_build/code.md > BodyFile.md
+          cat BodyFile.md
+          rm ./release_build/code.md
+          
+
+      - name: Create a Release
+        if: github.event_name == 'push'
+        uses: ncipollo/release-action@v1.11.2
+        with:
+          tag: $NEXT_VERSION
+          name: "MODFLOW and related programs binary executables"
+          bodyFile: "./BodyFile.md"
+          artifacts: "./release_build/*"
+          draft: false
+          allowUpdates: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+#      - name: Upload compiled executables to the latest GitHub release
+#        if: github.event_name == 'push'
+#        uses: svenstaro/upload-release-action@2.3.0
+#        with:
+#          repo_token: ${{ secrets.GITHUB_TOKEN }}
+#          file: ./release_build/*
+#          tag: $NEXT_VERSION
+#          overwrite: true
+#          file_glob: true
+#
+#      - name: Delete Artifact
+#        uses: GeekyEggo/delete-artifact@v1.0.0
+#        with:
+#          name: release_build

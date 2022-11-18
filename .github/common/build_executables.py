@@ -28,13 +28,14 @@ def get_cctag() -> str:
 
 
 if __name__ == "__main__":
-    path = (
-        pl.Path(os.path.dirname(pymake.__file__)) / "../"
-    ).resolve() / "examples/buildall.py"
+    path = (pl.Path(os.path.dirname(pymake.__file__)) / "../").resolve()
+    print(f"path to pymake: {path}")
+
+    file_path = pl.Path(".github/common/buildall.py")
 
     cmds = [
         "python",
-        path,
+        file_path,
         f"--appdir={get_ostag()}",
         "-fc=ifort",
         f"-cc={get_cctag()}",
@@ -43,8 +44,13 @@ if __name__ == "__main__":
     ]
 
     retries = 3
+    success = False
     for idx in range(retries):
         p = subprocess.run(cmds)
         if p.returncode == 0:
+            success = True
             break
         print(f"run {idx + 1}/{retries} failed...rerunning")
+
+    if not success:
+        raise RuntimeError("could not build the executables")
