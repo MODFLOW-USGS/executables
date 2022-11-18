@@ -10,4 +10,4 @@ dependencies:
   - matplotlib=3.4.3
 
   - pip:
-      - git+https://github.com/modflowpy/pymake@develop
+      - git+https://github.com/modflowpy/pymake@master
