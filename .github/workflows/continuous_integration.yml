@@ -178,11 +178,13 @@ jobs:
 
       - name: Set latest release tag as a environment variable
         run: |
-          echo "RELEASE_VERSION=${{ steps.executables.outputs.tag }}" >> $GITHUB_ENV
-          v=`echo "${{ steps.executables.outputs.tag }} + 1.0" | bc`
-          echo "NEXT_VERSION=$v" >> $GITHUB_ENV
-          echo "MODFLOW-USGS/executables current version is $RELEASE_VERSION"
-          echo "MODFLOW-USGS/executables next version is $NEXT_VERSION"
+          current="${{ steps.executables.outputs.tag }}"
+          # next="${current%.*}.$((${current##*.}+1))"
+          next=$(echo "${{ steps.executables.outputs.tag }} + 1.0" | bc)
+          echo "RELEASE_VERSION=$current" >> $GITHUB_ENV
+          echo "NEXT_VERSION=$next" >> $GITHUB_ENV
+          echo "MODFLOW-USGS/executables current version is $current"
+          echo "MODFLOW-USGS/executables next version is $next"
 
       - name: Download a Build Artifact
         uses: actions/download-artifact@v3.0.0
@@ -215,13 +217,12 @@ jobs:
           cat Header.md ./release_build/code.md > BodyFile.md
           cat BodyFile.md
           rm ./release_build/code.md
-          
 
       - name: Create a Release
         if: github.event_name == 'push'
         uses: ncipollo/release-action@v1.11.2
         with:
-          tag: $NEXT_VERSION
+          tag: ${{ env.NEXT_VERSION }}
           name: "MODFLOW and related programs binary executables"
           bodyFile: "./BodyFile.md"
           artifacts: "./release_build/*"
