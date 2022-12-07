@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-20.04
             os_script: ifortvars_linux.sh
             artifact_name: linux.zip
           - os: macos-latest
