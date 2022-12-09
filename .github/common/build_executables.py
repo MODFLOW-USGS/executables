@@ -1,8 +1,5 @@
-import os
 import sys
-import pymake
 import subprocess
-import pathlib as pl
 
 
 def get_ostag() -> str:
@@ -28,14 +25,9 @@ def get_cctag() -> str:
 
 
 if __name__ == "__main__":
-    path = (pl.Path(os.path.dirname(pymake.__file__)) / "../").resolve()
-    print(f"path to pymake: {path}")
-
-    file_path = pl.Path(".github/common/buildall.py")
-
     cmds = [
-        "python",
-        file_path,
+        "make-program",
+        ":",
         f"--appdir={get_ostag()}",
         "-fc=ifort",
         f"-cc={get_cctag()}",
