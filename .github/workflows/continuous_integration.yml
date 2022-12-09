@@ -26,23 +26,13 @@ jobs:
     defaults:
       run:
         shell: bash
-    env:
-      WINDOWS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18976/w_HPCKit_p_2022.3.1.19755_offline.exe
-      LINUX_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18975/l_HPCKit_p_2022.3.1.16997_offline.sh
-      MACOS_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/irc_nas/18977/m_HPCKit_p_2022.3.1.15344_offline.dmg
-      WINDOWS_FORTRAN_COMPONENTS: intel.oneapi.win.ifort-compiler
-      LINUX_FORTRAN_COMPONENTS_WEB: intel.oneapi.lin.ifort-compiler
-      MACOS_FORTRAN_COMPONENTS: intel.oneapi.mac.ifort-compiler
-      WINDOWS_CPP_COMPONENTS: intel.oneapi.win.cpp-compiler
-      LINUX_CPP_COMPONENTS_WEB: intel.oneapi.lin.dpcpp-cpp-compiler-pro
-      MACOS_CPP_COMPONENTS: intel.oneapi.mac.cpp-compiler
-      FC: ifort
 
-#    if:
-#      github.event_name == 'push'
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+
+      - name: Setup Intel OneAPI Compilers
+        uses: modflowpy/install-intelfortran-action@v1
 
       - uses: oprypin/find-latest-tag@v1
         with:
@@ -50,7 +40,8 @@ jobs:
           releases-only: true  # We know that all relevant tags have a GitHub release for them.
         id: executables  # The step ID to refer to later.
 
-      - run: |
+      - name: Setup persistent environment variables
+        run: |
           echo "MODFLOW-USGS/executables is at version ${{ steps.executables.outputs.tag }}"
           echo "RELEASE_VERSION=${{ steps.executables.outputs.tag }}" >> $GITHUB_ENV
 
@@ -69,60 +60,9 @@ jobs:
         run: |
           pip list
 
-      - name: cache install intel compilers on linux
-        if: runner.os == 'Linux'
-        id: cache-install-linux
-        uses: actions/cache@v3.0.11
-        with:
-          path: |
-            /opt/intel/oneapi/compiler
-          key: install-${{ env.LINUX_HPCKIT_URL }}-${{ env.LINUX_CPP_COMPONENTS_WEB }}-${{ env.LINUX_FORTRAN_COMPONENTS_WEB }}-compiler-${{ hashFiles('**/.github/intel-scripts/cache_exclude_linux.sh') }}
-
-      - name: install intel compilers on linux
-        if: runner.os == 'Linux' && steps.cache-install-linux.outputs.cache-hit != 'true'
-        run: |
-          .github/intel-scripts/install_linux.sh $LINUX_HPCKIT_URL $LINUX_CPP_COMPONENTS_WEB:$LINUX_FORTRAN_COMPONENTS_WEB
-
-      - name: cache install intel compilers on macos
-        if: runner.os == 'macOS'
-        id: cache-install-macos
-        uses: actions/cache@v3.0.11
-        with:
-          path: /opt/intel/oneapi
-          key: install-${{ env.MACOS_HPCKIT_URL }}--${{ env.MACOS_CPP_COMPONENTS }}-${{ env.MACOS_FORTRAN_COMPONENTS }}
-
-      - name: install intel compilers on macos
-        if: runner.os == 'macOS' && steps.cache-install-macos.outputs.cache-hit != 'true'
-        run: |
-          .github/intel-scripts/install_macos.sh $MACOS_HPCKIT_URL $MACOS_CPP_COMPONENTS:$MACOS_FORTRAN_COMPONENTS
-
-      - name: cache install intel compilers on windows
-        if: runner.os == 'Windows'
-        id: cache-install-windows
-        uses: actions/cache@v3.0.11
-        with:
-          path: C:\Program Files (x86)\Intel\oneAPI\compiler
-          key: install-${{ env.WINDOWS_HPCKIT_URL }}-${{ env.WINDOWS_CPP_COMPONENTS }}-${{ env.WINDOWS_FORTRAN_COMPONENTS }}-compiler-${{ hashFiles('**/.github/intel-scripts/cache_exclude_windows.sh') }}
-
-      - name: install intel compilers on windows
-        if: runner.os == 'Windows' && steps.cache-install-windows.outputs.cache-hit != 'true'
-        run: |
-          .github/intel-scripts/install_windows.bat $WINDOWS_HPCKIT_URL $WINDOWS_CPP_COMPONENTS:$WINDOWS_FORTRAN_COMPONENTS
-
-      - name: activate intel compilers and build executables on linux and macOS
+      - name: build executables on Linux, macOS, and Windows
         if: runner.os == 'Linux' || runner.os == 'macOS'
-        env:
-          CC: icc
         run: |
-          .github/intel-scripts/${{ matrix.os_script }}
-
-      - name: activate intel compilers and build executables on Windows
-        if: runner.os == 'Windows'
-        env:
-          CC: icl
-        shell: cmd
-        run: |
-          call ".github/intel-scripts/ifortvars_windows.bat"
           python .github/common/build_executables.py
 
       - name: Upload a Build Artifact
@@ -141,16 +81,6 @@ jobs:
             ./code.json
             ./code.md
 
-      - name: exclude unused files from cache on windows
-        if: runner.os == 'Windows' && steps.cache-install-windows.outputs.cache-hit != 'true'
-        run: |
-          .github/intel-scripts/cache_exclude_windows.sh
-
-      - name: exclude unused files from cache on linux
-        if: runner.os == 'Linux' && steps.cache-install-linux.outputs.cache-hit != 'true'
-        run: |
-          .github/intel-scripts/cache_exclude_linux.sh
-
 
   # make the release if previous job was successful
   release:
@@ -161,8 +91,6 @@ jobs:
       run:
         shell: bash
 
-#    if:
-#      github.event_name == 'push'
     steps:
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -230,16 +158,6 @@ jobs:
           allowUpdates: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
-#      - name: Upload compiled executables to the latest GitHub release
-#        if: github.event_name == 'push'
-#        uses: svenstaro/upload-release-action@2.3.0
-#        with:
-#          repo_token: ${{ secrets.GITHUB_TOKEN }}
-#          file: ./release_build/*
-#          tag: $NEXT_VERSION
-#          overwrite: true
-#          file_glob: true
-#
 #      - name: Delete Artifact
 #        uses: GeekyEggo/delete-artifact@v1.0.0
 #        with:
