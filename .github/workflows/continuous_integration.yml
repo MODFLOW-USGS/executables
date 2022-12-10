@@ -60,8 +60,14 @@ jobs:
         run: |
           pip list
 
-      - name: build executables on Linux, macOS, and Windows
-        if: runner.os == 'Linux' || runner.os == 'macOS'
+      - name: build executables on Linux and macOS
+        if: runner.os != 'Windows'
+        run: |
+          python .github/common/build_executables.py
+
+      - name: build executables on Windows
+        if: runner.os == 'Windows'
+        shell: cmd
         run: |
           python .github/common/build_executables.py
 

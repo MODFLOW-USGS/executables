@@ -1,6 +1,8 @@
 # MODFLOW EXECUTABLES
 
-The purpose of this repository is to distribute binary executable programs for MODFLOW and related programs that will run on Windows, Mac, and Linux operating systems.  Executables for these different operating systems can be found under the [release](https://github.com/MODFLOW-USGS/executables/releases) tab above and are named:
+The purpose of this repository is to distribute binary executable programs for MODFLOW and related programs that will run on Windows, Mac, and Linux operating systems. These programs are compiled using [pymake](https://github.com/modflowpy/pymake) and the Intel OneAPI compilers. The release also includes a json file ([code.json](https://github.com/MODFLOW-USGS/executables/releases/latest/download/code.json)) that includes the current version number and the url address that can be used to download the source files used to build these programs. 
+
+Executables for these different operating systems can be found under the [release](https://github.com/MODFLOW-USGS/executables/releases) tab above and are named:
 
 * [win64.zip](https://github.com/MODFLOW-USGS/executables/releases/latest/download/win64.zip)
 * [mac.zip](https://github.com/MODFLOW-USGS/executables/releases/latest/download/mac.zip)
@@ -10,28 +12,23 @@ The programs, version numbers, and the date stamp on the downloaded file used to
 
 | Program | Version | UTC Date |
 | ------- | ------- | ---- |
-| mf6 | 6.4.0 | 12/01/2022 |
-| zbud6 | 6.4.0 | 12/01/2022 |
-| libmf6 | 6.4.0 | 12/01/2022 |
+| crt | 1.3.1 | 04/11/2017 |
+| gridgen | 1.0.02 | 10/24/2018 |
+| libmf6 | 6.4.1 | 12/09/2022 |
+| mf2000 | 1.19.01 | 03/30/2010 |
+| mf2005 | 1.12.00 | 12/07/2021 |
+| mf6 | 6.4.1 | 12/09/2022 |
+| mflgr | 2.0.0 | 09/20/2013 |
+| mfnwt | 1.3.0 | 09/07/2022 |
+| mfusg | 1.5 | 02/27/2019 |
+| mp6 | 6.0.1 | 10/23/2018 |
 | mp7 | 7.2.001 | 10/23/2018 |
 | mt3dms | 5.3.0 | 02/21/2010 |
 | mt3dusgs | 1.1.0 | 07/12/2019 |
-| vs2dt | 3.3 | 04/02/2018 |
-| triangle | 1.6 | 07/29/2005 |
-| gridgen | 1.0.02 | 10/24/2018 |
-| crt | 1.3.1 | 04/11/2017 |
 | sutra | 3.0 | 08/20/2019 |
-| mf2000 | 1.19.01 | 03/30/2010 |
-| mf2005 | 1.12.00 | 12/07/2021 |
-| mfusg | 1.5 | 02/27/2019 |
-| zonbudusg | 1.5 | 02/27/2019 |
 | swtv4 | 4.00.05 | 10/24/2018 |
-| mp6 | 6.0.1 | 10/23/2018 |
-| mflgr | 2.0.0 | 09/20/2013 |
+| triangle | 1.6 | 07/29/2005 |
+| vs2dt | 3.3 | 04/02/2018 |
+| zbud6 | 6.4.1 | 12/09/2022 |
 | zonbud3 | 3.01 | 10/25/2018 |
-| mfnwt | 1.3.0 | 09/07/2022 |
-
-
-
-These programs are compiled using [pymake](https://github.com/modflowpy/pymake) and the Intel OneAPI compilers. The release also includes a json file ([code.json](https://github.com/MODFLOW-USGS/executables/releases/latest/download/code.json)) that includes the current version number and the url address that can be used to download the source files used to build these programs.
-
+| zonbudusg | 1.5 | 02/27/2019 |
