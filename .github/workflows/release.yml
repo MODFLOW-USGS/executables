@@ -1,11 +1,9 @@
-name: executables continuous integration
-
+name: Release executables
 on:
   schedule:
     - cron: '0 3 * * 3' # run at 3 AM UTC every Wednesday
   push:
     branches: [ master ]
-  pull_request:
 jobs:
   executables-intel:
     name: pymake CI intel on different OSs
@@ -77,7 +75,6 @@ jobs:
           path: |
             ./code.json
             ./code.md
-
 
   # make the release if previous job was successful
   release:
