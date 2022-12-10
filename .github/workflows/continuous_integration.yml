@@ -13,16 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-20.04
-            os_script: ifortvars_linux.sh
-            artifact_name: linux.zip
-          - os: macos-latest
-            os_script: ifortvars_macos.sh
-            artifact_name: mac.zip
-          - os: windows-2019
-            os_script: ifortvars_windows.bat
-            artifact_name: win64.zip
+        os: [ubuntu-20.04, macos-latest, windows-2019]
     defaults:
       run:
         shell: bash
@@ -76,7 +67,7 @@ jobs:
         with:
           name: release_build
           path: |
-            ./${{ matrix.artifact_name }}
+            ./*.zip
 
       - name: Upload additional Build Artifacts
         if: runner.os == 'Linux'
