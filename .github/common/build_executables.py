@@ -39,6 +39,16 @@ def mfpymake_run_command(args) -> bool:
 
 if __name__ == "__main__":
     cmd = [
+        "make-code-json",
+        "-f",
+        f"{get_ostag()}/code.json",
+        "--verbose",
+    ]
+
+    if not mfpymake_run_command(cmd):
+        raise RuntimeError(f"could not run {cmd[0]}")
+
+    cmd = [
         "make-program",
         ":",
         f"--appdir={get_ostag()}",
@@ -51,12 +61,3 @@ if __name__ == "__main__":
     if not mfpymake_run_command(cmd):
         raise RuntimeError("could not build the executables")
 
-    cmd = [
-        "make-code-json",
-        "-f",
-        f"code.json",
-        "--verbose",
-    ]
-
-    if not mfpymake_run_command(cmd):
-        raise RuntimeError(f"could not run {cmd[0]}")
