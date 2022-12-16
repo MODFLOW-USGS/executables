@@ -1,6 +1,6 @@
 # MODFLOW EXECUTABLES
 
-The purpose of this repository is to distribute binary executable programs for MODFLOW and related programs that will run on Windows, Mac, and Linux operating systems. These programs are compiled using [pymake](https://github.com/modflowpy/pymake) and the Intel OneAPI compilers. The release also includes a json file ([code.json](https://github.com/MODFLOW-USGS/executables/releases/latest/download/code.json)) that includes the current version number and the url address that can be used to download the source files used to build these programs. 
+The purpose of this repository is to distribute binaries for MODFLOW and related programs. Distributions are provided for Windows, Mac, and Linux operating systems. Programs are compiled using [pymake](https://github.com/modflowpy/pymake) and Intel OneAPI compilers. The release also includes a json file [`code.json`](https://github.com/MODFLOW-USGS/executables/releases/latest/download/code.json) that includes, for each program, the current version number, the URL that can be used to download the source files, and the date sources were last updated. A markdown version of this file, `code.md` is also included in the distribution.
 
 Executables for these different operating systems can be found under the [release](https://github.com/MODFLOW-USGS/executables/releases) tab above and are named:
 

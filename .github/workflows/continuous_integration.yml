@@ -6,6 +6,7 @@ on:
   push:
     branches: [ master ]
   pull_request:
+  workflow_dispatch:
 jobs:
   executables-intel:
     name: pymake CI intel on different OSs
@@ -46,9 +47,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install wheel
           pip install https://github.com/modflowpy/pymake/zipball/master
-
-      - name: Print Python package versions
-        run: |
           pip list
 
       - name: build executables on Linux and macOS
@@ -78,7 +76,6 @@ jobs:
             ./code.json
             ./code.md
 
-
   # make the release if previous job was successful
   release:
     name: Make a release
@@ -89,10 +86,18 @@ jobs:
         shell: bash
 
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.9
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install https://github.com/modflowpy/pymake/zipball/master
 
       - name: Get the latest release tag
         uses: oprypin/find-latest-tag@v1
@@ -101,28 +106,28 @@ jobs:
           releases-only: true  # We know that all relevant tags have a GitHub release for them.
         id: executables  # The step ID to refer to later.
 
-      - name: Set latest release tag as a environment variable
+      - name: Get latest release tag
         run: |
           current="${{ steps.executables.outputs.tag }}"
           # next="${current%.*}.$((${current##*.}+1))"
           next=$(echo "${{ steps.executables.outputs.tag }} + 1.0" | bc)
           echo "RELEASE_VERSION=$current" >> $GITHUB_ENV
           echo "NEXT_VERSION=$next" >> $GITHUB_ENV
-          echo "MODFLOW-USGS/executables current version is $current"
-          echo "MODFLOW-USGS/executables next version is $next"
+          
+          repo="${{ github.repository }}"
+          echo "$repo current version is $current"
+          echo "$repo next version is $next"
 
-      - name: Download a Build Artifact
+      - name: Download release artifact
         uses: actions/download-artifact@v3.0.0
         with:
           name: release_build
           path: ./release_build/
 
-      - name: List files in the artifact directory
-        run: |
-          pwd
-          ls -l ./release_build/
+      - name: List artifact files
+        run: ls -l ./release_build/
 
-      - name: Create the Header for BodyFile markdown file
+      - name: Create release body header
         shell: python
         run: |
           import os
@@ -133,18 +138,59 @@ jobs:
           with open('Header.md', "w") as file:
               file.write(line)
 
-      - name: Build of BodyFile.md
+      - name: Build release body
         run: |
           cat Header.md
-
-      - name: List contents of BodyFile.md
-        run: |
           cat Header.md ./release_build/code.md > BodyFile.md
           cat BodyFile.md
-          rm ./release_build/code.md
 
-      - name: Create a Release
-        if: github.event_name == 'push'
+      - name: Update readme
+        id: update-readme
+        run: |
+          cp release_build/code.md code.md
+          cp release_build/code.json code.json
+          python update_readme.py
+          stat README.md
+          cat README.md
+          readme_changed=$(git diff --exit-code README.md)
+          if [ "$readme_changed" -eq "1" ]; then
+            echo "Changes to README.md:"
+            git diff README.md
+            changes="true"
+          else
+            echo "No changes to README.md"
+            changes="false"
+          fi
+          echo "changes=$changes" >> $GITHUB_OUTPUT
+
+      - name: Draft pull request
+        # only open PR on manual trigger
+        if: github.event_name == 'workflow_dispatch' && steps.update-readme.outputs.changes == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # commit and push
+          branch="update-readme-${{ env.NEXT_VERSION }}"
+          git config core.sharedRepository true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git status
+          git switch -c $branch
+          git commit -m "ci(release): update readme"
+          git push -u origin "$branch"
+          
+          # create PR
+          body='
+          # MODFLOW executables release '${{ env.NEXT_VERSION }}'
+          
+          This PR updates `README.md` with the latest release information.
+          '
+          gh pr create -B "master" -H "$branch" --title "Release ${{ env.NEXT_VERSION }}" --draft --body "$body"
+
+      - name: Create release
+        # only create new release on manual trigger
+        if: github.event_name == 'workflow_dispatch'
         uses: ncipollo/release-action@v1.11.2
         with:
           tag: ${{ env.NEXT_VERSION }}
