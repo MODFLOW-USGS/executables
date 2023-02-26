@@ -3,7 +3,9 @@ on:
   schedule:
     - cron: '0 3 * * 3' # run at 3 AM UTC every Wednesday
   push:
-    branches: [ master ]
+    branches:
+      - master
+      - develop
   workflow_dispatch:
 jobs:
   executables-intel:
@@ -48,13 +50,13 @@ jobs:
           pip list
 
       - name: build executables on Linux and macOS
-        if: runner.os != 'Windows'
+        # if: runner.os != 'Windows'
         run: python scripts/build_executables.py
 
-      - name: build executables on Windows
-        if: runner.os == 'Windows'
-        shell: cmd
-        run: python scripts/build_executables.py
+      # - name: build executables on Windows
+      #   if: runner.os == 'Windows'
+      #   shell: cmd
+      #   run: python scripts/build_executables.py
 
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v3.1.1
@@ -145,7 +147,7 @@ jobs:
           # update readme from metadata
           cp release_build/code.md code.md
           cp release_build/code.json code.json
-          python update_readme.py
+          python scripts/update_readme.py
           
           # determine whether changes need to be committed
           readme_changed=$(git diff --exit-code README.md)

@@ -1,4 +1,3 @@
-import subprocess
 import pathlib as pl
 
 target_file = pl.Path("code.md")
@@ -21,12 +20,5 @@ def _update_readme() -> None:
                 break
 
 
-def _clean_files() -> None:
-    for file in FILES:
-        pl.Path(file).unlink()
-
-
 if __name__ == "__main__":
-    _create_code_json()
     _update_readme()
-    _clean_files()

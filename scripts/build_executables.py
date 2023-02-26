@@ -29,7 +29,7 @@ def get_cc() -> str:
     raise ValueError(f"platform {sys.platform!r} not supported")
 
 
-def mfpymake_run_command(args) -> bool:
+def run_cmd(args) -> bool:
     success = False
     for idx in range(DEFAULT_RETRIES):
         p = subprocess.run(args)
@@ -78,23 +78,21 @@ if __name__ == "__main__":
     # C compiler
     cc = get_cc()
 
-    cmd = [
+    # create code.json
+    if not run_cmd([
         "make-code-json",
         "-f",
         str(path / "code.json"),
         "--verbose",
-    ]
+    ]):
+        raise RuntimeError(f"could not make code.json")
 
-    if not mfpymake_run_command(cmd):
-        raise RuntimeError(f"could not run {cmd[0]}")
-
-    cmd = [
+    # build binaries
+    if not run_cmd([
         "make-program", ":",
         f"--appdir={path}",
         "-fc=ifort", f"-cc={cc}",
         f"--zip={path}.zip",
         "--keep",
-    ]
-
-    if not mfpymake_run_command(cmd):
-        raise RuntimeError("could not build the executables")
+    ]):
+        raise RuntimeError("could not build binaries")
