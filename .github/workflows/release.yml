@@ -1,11 +1,11 @@
-name: executables continuous integration
-
+name: Release MODFLOW executables
 on:
   schedule:
     - cron: '0 3 * * 3' # run at 3 AM UTC every Wednesday
   push:
-    branches: [ master ]
-  pull_request:
+    branches:
+      - master
+      - develop
   workflow_dispatch:
 jobs:
   executables-intel:
@@ -50,26 +50,23 @@ jobs:
           pip list
 
       - name: build executables on Linux and macOS
-        if: runner.os != 'Windows'
-        run: |
-          python .github/common/build_executables.py
+        # if: runner.os != 'Windows'
+        run: python scripts/build_executables.py
 
-      - name: build executables on Windows
-        if: runner.os == 'Windows'
-        shell: cmd
-        run: |
-          python .github/common/build_executables.py
+      # - name: build executables on Windows
+      #   if: runner.os == 'Windows'
+      #   shell: cmd
+      #   run: python scripts/build_executables.py
 
       - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v3.1.1
+        uses: actions/upload-artifact@v3
         with:
           name: release_build
-          path: |
-            ./*.zip
+          path: ./*.zip
 
       - name: Upload additional Build Artifacts
         if: runner.os == 'Linux'
-        uses: actions/upload-artifact@v3.1.0
+        uses: actions/upload-artifact@v3
         with:
           name: release_build
           path: |
@@ -119,7 +116,7 @@ jobs:
           echo "$repo next version is $next"
 
       - name: Download release artifact
-        uses: actions/download-artifact@v3.0.0
+        uses: actions/download-artifact@v3
         with:
           name: release_build
           path: ./release_build/
@@ -140,20 +137,20 @@ jobs:
 
       - name: Build release body
         run: |
-          cat Header.md
           cat Header.md ./release_build/code.md > BodyFile.md
           cat BodyFile.md
 
       - name: Update readme
         id: update-readme
         run: |
+          # update readme from metadata
           cp release_build/code.md code.md
           cp release_build/code.json code.json
-          python update_readme.py
-          stat README.md
-          cat README.md
+          python scripts/update_readme.py
+          
+          # determine whether changes need to be committed
           readme_changed=$(git diff --exit-code README.md)
-          if [ "$readme_changed" -eq "1" ]; then
+          if [ "$readme_changed" -eq 1 ]; then
             echo "Changes to README.md:"
             git diff README.md
             changes="true"
@@ -191,7 +188,7 @@ jobs:
       - name: Create release
         # only create new release on manual trigger
         if: github.event_name == 'workflow_dispatch'
-        uses: ncipollo/release-action@v1.11.2
+        uses: ncipollo/release-action@v1
         with:
           tag: ${{ env.NEXT_VERSION }}
           name: "MODFLOW and related programs binary executables"
