@@ -59,14 +59,14 @@ jobs:
       #   run: python scripts/build_executables.py
 
       - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v3.1.1
+        uses: actions/upload-artifact@v3
         with:
           name: release_build
           path: ./*.zip
 
       - name: Upload additional Build Artifacts
         if: runner.os == 'Linux'
-        uses: actions/upload-artifact@v3.1.0
+        uses: actions/upload-artifact@v3
         with:
           name: release_build
           path: |
@@ -116,7 +116,7 @@ jobs:
           echo "$repo next version is $next"
 
       - name: Download release artifact
-        uses: actions/download-artifact@v3.0.0
+        uses: actions/download-artifact@v3
         with:
           name: release_build
           path: ./release_build/
@@ -137,7 +137,6 @@ jobs:
 
       - name: Build release body
         run: |
-          cat Header.md
           cat Header.md ./release_build/code.md > BodyFile.md
           cat BodyFile.md
 
@@ -151,7 +150,7 @@ jobs:
           
           # determine whether changes need to be committed
           readme_changed=$(git diff --exit-code README.md)
-          if [ "$readme_changed" -eq "1" ]; then
+          if [ "$readme_changed" -eq 1 ]; then
             echo "Changes to README.md:"
             git diff README.md
             changes="true"
@@ -189,7 +188,7 @@ jobs:
       - name: Create release
         # only create new release on manual trigger
         if: github.event_name == 'workflow_dispatch'
-        uses: ncipollo/release-action@v1.11.2
+        uses: ncipollo/release-action@v1
         with:
           tag: ${{ env.NEXT_VERSION }}
           name: "MODFLOW and related programs binary executables"
