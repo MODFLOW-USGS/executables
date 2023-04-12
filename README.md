@@ -21,6 +21,7 @@ The programs, version numbers, and the date stamp on the downloaded file used to
 | mflgr | 2.0.0 | 09/20/2013 |
 | mfnwt | 1.3.0 | 09/07/2022 |
 | mfusg | 1.5 | 02/27/2019 |
+| mfusg_gsi | 2.01.0 | None |
 | mp6 | 6.0.1 | 10/23/2018 |
 | mp7 | 7.2.001 | 10/23/2018 |
 | mt3dms | 5.3.0 | 02/21/2010 |
