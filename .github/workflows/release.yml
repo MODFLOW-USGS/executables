@@ -140,6 +140,11 @@ jobs:
           cat Header.md ./release_build/code.md > BodyFile.md
           cat BodyFile.md
 
+      # - name: Setup tmate session
+      #   uses: mxschmitt/action-tmate@v3
+      #   with:
+      #     limit-access-to-actor: true
+
       - name: Update readme
         id: update-readme
         run: |
@@ -149,8 +154,7 @@ jobs:
           python scripts/update_readme.py
           
           # determine whether changes need to be committed
-          readme_changed=$(git diff --exit-code README.md)
-          if [ "$readme_changed" -eq 1 ]; then
+          if [[ `git status --porcelain --untracked-files=no` ]]; then
             echo "Changes to README.md:"
             git diff README.md
             changes="true"
