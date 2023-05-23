@@ -40,9 +40,11 @@ jobs:
           path: modflow6
 
       - name: Setup Micromamba
-        uses: mamba-org/provision-with-micromamba@main
+        uses: mamba-org/setup-micromamba@v1
         with:
           environment-file: modflow6/environment.yml
+          cache-environment: true
+          cache-downloads: true
 
       - name: Setup ifort
         uses: modflowpy/install-intelfortran-action@v1
