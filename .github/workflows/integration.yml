@@ -2,14 +2,14 @@ name: Integration testing
 on:
   push:
     branches:
-      - main
+      - master
       - develop*
       - ci-diagnose*
     paths-ignore:
       - '**.md'
   pull_request:
     branches:
-      - main
+      - master
       - develop
     paths-ignore:
       - '**.md'
@@ -42,21 +42,23 @@ jobs:
       - name: Setup Micromamba
         uses: mamba-org/setup-micromamba@v1
         with:
+          micromamba-root-path: ${{ runner.temp }}/micromamba-root
           environment-file: modflow6/environment.yml
           cache-environment: true
           cache-downloads: true
+          init-shell: >-
+            bash
+            powershell
 
       - name: Setup ifort
         uses: modflowpy/install-intelfortran-action@v1
-        # with:
-        #   path: ${{ runner.os != 'Windows' && 'bin' || 'C:\Program Files (x86)\Intel\oneAPI' }}
 
       - name: Fix Micromamba path (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           # https://github.com/modflowpy/install-intelfortran-action#conda-scripts
-          $mamba_bin = "C:\Users\runneradmin\micromamba-root\envs\modflow6\Scripts"
+          $mamba_bin = "${{ runner.temp }}\micromamba-root\envs\modflow6\Scripts"
           echo $mamba_bin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Build modflow6 (Linux & Mac)
