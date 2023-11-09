@@ -51,6 +51,12 @@ if __name__ == "__main__":
         ),
     )
     parser.add_argument(
+        "-k",
+        "--keep",
+        action=argparse.BooleanOptionalAction,
+        help="Whether to keep (not recreate) existing binaries",
+    )
+    parser.add_argument(
         "-p",
         "--path",
         required=False,
@@ -67,6 +73,9 @@ if __name__ == "__main__":
 
     )
     args = parser.parse_args()
+
+    # whether to recreate existing binaries
+    keep = bool(args.keep)
 
     # output path
     path = Path(args.path)
@@ -88,11 +97,13 @@ if __name__ == "__main__":
         raise RuntimeError(f"could not make code.json")
 
     # build binaries
-    if not run_cmd([
+    build_args = [
         "make-program", ":",
         f"--appdir={path}",
         "-fc=ifort", f"-cc={cc}",
         f"--zip={path}.zip",
-        "--keep",
-    ]):
+    ]
+    if keep:
+        build_args.append("--keep")
+    if not run_cmd(build_args):
         raise RuntimeError("could not build binaries")

@@ -7,9 +7,11 @@ on:
       - master
       - develop
   workflow_dispatch:
+env:
+  DIST: dist
 jobs:
-  executables-intel:
-    name: pymake CI intel on different OSs
+  build:
+    name: Build distribution
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -21,21 +23,24 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Setup Intel OneAPI Compilers
-        uses: modflowpy/install-intelfortran-action@v1
+      - name: Setup Intel fortran
+        uses: fortran-lang/setup-fortran@v1
+        with:
+          compiler: intel-classic
+          version: 2021.7
 
       - uses: oprypin/find-latest-tag@v1
+        id: tag
         with:
-          repository: MODFLOW-USGS/executables  # The repository to scan.
-          releases-only: true  # We know that all relevant tags have a GitHub release for them.
-        id: executables  # The step ID to refer to later.
-
-      - name: Setup persistent environment variables
+          repository: ${{ github.repository }}
+          releases-only: true
+        
+      - name: Set environment variables
         run: |
-          echo "MODFLOW-USGS/executables is at version ${{ steps.executables.outputs.tag }}"
-          echo "RELEASE_VERSION=${{ steps.executables.outputs.tag }}" >> $GITHUB_ENV
+          echo "${{ github.repository }} version ${{ steps.tag.outputs.tag }}"
+          echo "RELEASE_VERSION=${{ steps.tag.outputs.tag }}" >> $GITHUB_ENV
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -45,38 +50,31 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install wheel
-          pip install https://github.com/modflowpy/pymake/zipball/master
+          pip install -r requirements.txt
           pip list
 
-      - name: build executables on Linux and macOS
-        # if: runner.os != 'Windows'
+      - name: Build executables
         run: python scripts/build_executables.py
 
-      # - name: build executables on Windows
-      #   if: runner.os == 'Windows'
-      #   shell: cmd
-      #   run: python scripts/build_executables.py
-
-      - name: Upload a Build Artifact
+      - name: Upload distribution archive
         uses: actions/upload-artifact@v3
         with:
-          name: release_build
+          name: ${{ env.DIST }}
           path: ./*.zip
 
-      - name: Upload additional Build Artifacts
+      - name: Upload distribution metadata
         if: runner.os == 'Linux'
         uses: actions/upload-artifact@v3
         with:
-          name: release_build
+          name: ${{ env.DIST }}
           path: |
             ./code.json
             ./code.md
 
   # make the release if previous job was successful
   release:
-    name: Make a release
-    needs: executables-intel
+    name: Make release
+    needs: build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -96,33 +94,32 @@ jobs:
           python -m pip install --upgrade pip
           pip install https://github.com/modflowpy/pymake/zipball/master
 
-      - name: Get the latest release tag
+      - name: Get last release tag
+        id: last-tag
         uses: oprypin/find-latest-tag@v1
         with:
-          repository: MODFLOW-USGS/executables  # The repository to scan.
-          releases-only: true  # We know that all relevant tags have a GitHub release for them.
-        id: executables  # The step ID to refer to later.
+          repository: ${{ github.repository }}
+          releases-only: true
 
-      - name: Get latest release tag
+      - name: Get next release tag
+        id: next-tag
         run: |
-          current="${{ steps.executables.outputs.tag }}"
-          # next="${current%.*}.$((${current##*.}+1))"
-          next=$(echo "${{ steps.executables.outputs.tag }} + 1.0" | bc)
+          current="${{ steps.last-tag.outputs.tag }}"
+          next=$(echo "${{ steps.last-tag.outputs.tag }} + 1.0" | bc)
           echo "RELEASE_VERSION=$current" >> $GITHUB_ENV
-          echo "NEXT_VERSION=$next" >> $GITHUB_ENV
-          
+          echo "tag=$next" >> $GITHUB_OUTPUT
           repo="${{ github.repository }}"
           echo "$repo current version is $current"
           echo "$repo next version is $next"
 
-      - name: Download release artifact
+      - name: Download distribution
         uses: actions/download-artifact@v3
         with:
-          name: release_build
-          path: ./release_build/
+          name: ${{ env.DIST }}
+          path: ${{ env.DIST }}
 
-      - name: List artifact files
-        run: ls -l ./release_build/
+      - name: List distribution files
+        run: ls -l ${{ env.DIST }}
 
       - name: Create release body header
         shell: python
@@ -137,9 +134,10 @@ jobs:
 
       - name: Build release body
         run: |
-          cat Header.md ./release_build/code.md > BodyFile.md
+          cat Header.md ${{ env.DIST }}/code.md > BodyFile.md
           cat BodyFile.md
 
+      # interactive debugging
       # - name: Setup tmate session
       #   uses: mxschmitt/action-tmate@v3
       #   with:
@@ -149,8 +147,8 @@ jobs:
         id: update-readme
         run: |
           # update readme from metadata
-          cp release_build/code.md code.md
-          cp release_build/code.json code.json
+          cp ${{ env.DIST }}/code.md code.md
+          cp ${{ env.DIST }}/code.json code.json
           python scripts/update_readme.py
           
           # determine whether changes need to be committed
@@ -164,14 +162,14 @@ jobs:
           fi
           echo "changes=$changes" >> $GITHUB_OUTPUT
 
+      # open PR if manual trigger
       - name: Draft pull request
-        # only open PR on manual trigger
         if: github.event_name == 'workflow_dispatch' && steps.update-readme.outputs.changes == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           # commit and push
-          branch="update-readme-${{ env.NEXT_VERSION }}"
+          branch="update-readme-${{ steps.next-tag.outputs.tag }}"
           git config core.sharedRepository true
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -183,26 +181,21 @@ jobs:
           
           # create PR
           body='
-          # MODFLOW executables release '${{ env.NEXT_VERSION }}'
+          # MODFLOW executables release '${{ steps.next-tag.outputs.tag }}'
           
           This PR updates `README.md` with the latest release information.
           '
-          gh pr create -B "master" -H "$branch" --title "Release ${{ env.NEXT_VERSION }}" --draft --body "$body"
+          gh pr create -B "master" -H "$branch" --title "Release ${{ steps.next-tag.outputs.tag }}" --draft --body "$body"
 
+      # create new release if manual trigger
       - name: Create release
-        # only create new release on manual trigger
         if: github.event_name == 'workflow_dispatch'
         uses: ncipollo/release-action@v1
         with:
-          tag: ${{ env.NEXT_VERSION }}
+          tag: ${{ steps.next-tag.outputs.tag }}
           name: "MODFLOW and related programs binary executables"
           bodyFile: "./BodyFile.md"
-          artifacts: "./release_build/*"
+          artifacts: "${{ env.DIST }}/*"
           draft: false
           allowUpdates: true
           token: ${{ secrets.GITHUB_TOKEN }}
-
-#      - name: Delete Artifact
-#        uses: GeekyEggo/delete-artifact@v1.0.0
-#        with:
-#          name: release_build
