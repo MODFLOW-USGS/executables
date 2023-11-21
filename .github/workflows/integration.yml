@@ -1,10 +1,6 @@
 name: Integration testing
 on:
   push:
-    branches:
-      - master
-      - develop*
-      - ci-diagnose*
     paths-ignore:
       - '**.md'
   pull_request:
@@ -28,13 +24,13 @@ jobs:
         shell: bash -l {0}
     steps:
 
-      - name: Checkout action
-        uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v4
         with:
           path: executables
 
       - name: Checkout modflow6
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: MODFLOW-USGS/modflow6
           path: modflow6
@@ -42,83 +38,46 @@ jobs:
       - name: Setup Micromamba
         uses: mamba-org/setup-micromamba@v1
         with:
-          micromamba-root-path: ${{ runner.temp }}/micromamba-root
           environment-file: modflow6/environment.yml
           cache-environment: true
           cache-downloads: true
-          init-shell: >-
-            bash
-            powershell
+          init-shell: bash
 
-      - name: Setup ifort
-        uses: modflowpy/install-intelfortran-action@v1
+      - name: Setup Intel fortran
+        uses: fortran-lang/setup-fortran@v1
+        with:
+          compiler: intel-classic
+          version: 2021.7
 
-      - name: Fix Micromamba path (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          # https://github.com/modflowpy/install-intelfortran-action#conda-scripts
-          $mamba_bin = "${{ runner.temp }}\micromamba-root\envs\modflow6\Scripts"
-          echo $mamba_bin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-
-      - name: Build modflow6 (Linux & Mac)
+      - name: Build modflow6
         working-directory: modflow6
         run: |
-          meson setup builddir -Ddebug=false --prefix=$(pwd) --libdir=bin
-          meson compile -v -C builddir
+          meson setup builddir --prefix=$(pwd) --libdir=bin -Ddebug=false
           meson install -C builddir
 
-      # - name: Show meson build log
-      #   run: cat modflow6/builddir/meson-logs/meson-log.txt
+      - name: Show meson build log
+        if: failure()
+        working-directory: modflow6
+        run: cat builddir/meson-logs/meson-log.txt
+      
+      - name: Unit test modflow6
+        working-directory: modflow6
+        run: meson test --verbose --no-rebuild -C builddir
 
       - name: Update FloPy
         working-directory: modflow6/autotest
         run: python update_flopy.py
 
       - name: Get executables
-        if: runner.os != 'Windows'
         working-directory: modflow6/autotest
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          pytest -v -s get_exes.py
-          sudo rm -rf ../bin/downloaded/*
-
-      - name: Get executables
-        if: runner.os == 'Windows'
-        shell: pwsh
-        working-directory: modflow6/autotest
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          pytest -v -s get_exes.py
-          rm -Force ../bin/downloaded/*
-
-      - name: Show pymake version
-        run: |
-          pip show mfpymake
-          python -c "import pymake; print(pymake.__version__)"
+        run: pytest -v -s get_exes.py
 
       - name: Build executables
-        if: runner.os != 'Windows'
         working-directory: executables/scripts
         run: python build_executables.py -p ../../modflow6/bin/downloaded
-
-      - name: Build executables
-        if: runner.os == 'Windows'
-        shell: cmd
-        working-directory: executables/scripts
-        run: python build_executables.py -p ../../modflow6/bin/downloaded
-
-      # - name: Build executables
-      #   uses: nick-fields/retry@v2
-      #   with:
-      #     timeout_minutes: 40
-      #     max_attempts: 5
-      #     command: |
-      #       cd modflow6/bin/downloaded
-      #       python ../../../scripts/build_executables.py
-
+        
       - name: Set executable permission
         if: runner.os != 'Windows'
         working-directory: modflow6/bin/downloaded
