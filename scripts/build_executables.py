@@ -79,11 +79,10 @@ if __name__ == "__main__":
     ]):
         raise RuntimeError(f"could not make code.json")
 
-    # build binaries
+    # build single precision binaries
     build_args = [
         "make-program", ":",
         "--appdir", path,
-        "--double",
         "-fc", "ifort",
         "-cc", cc,
         "--zip", f"{path}.zip",
@@ -91,4 +90,17 @@ if __name__ == "__main__":
     if keep:
         build_args.append("--keep")
     if not run_cmd(build_args):
-        raise RuntimeError("could not build binaries")
+        raise RuntimeError("could not build single precision binaries")
+
+    # build double precision binaries
+    build_args = [
+        "make-program", "mf2005,mflgr,mfnwt,mfusg",
+        "--appdir", path,
+        "--double",
+        "--keep",
+        "-fc", "ifort",
+        "-cc", cc,
+        "--zip", f"{path}.zip",
+    ]
+    if not run_cmd(build_args):
+        raise RuntimeError("could not build single precision binaries")
