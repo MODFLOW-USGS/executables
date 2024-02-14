@@ -4,22 +4,13 @@ import subprocess
 import textwrap
 from pathlib import Path
 
+from modflow_devtools.ostags import get_modflow_ostag
+
 DEFAULT_RETRIES = 3
 
 
-def get_ostag() -> str:
-    """Determine operating system tag from sys.platform."""
-    if sys.platform.startswith("linux"):
-        return "linux"
-    elif sys.platform.startswith("win"):
-        return "win64"
-    elif sys.platform.startswith("darwin"):
-        return "mac"
-    raise ValueError(f"platform {sys.platform!r} not supported")
-
-
 def get_cc() -> str:
-    """Determine operating system tag from sys.platform."""
+    """Determine Intel C compiler to use based on the current platform."""
     if sys.platform.startswith("linux"):
         return "icc"
     elif sys.platform.startswith("win"):
@@ -46,7 +37,7 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=textwrap.dedent(
             """\
-            Build MODFLOW-releated executables, shared libraries and metadata files with pymake.
+            Build MODFLOW-related executables, shared libraries and metadata files with pymake.
             """
         ),
     )
@@ -60,7 +51,7 @@ if __name__ == "__main__":
         "-p",
         "--path",
         required=False,
-        default=get_ostag(),
+        default=get_modflow_ostag(),
         help="Path to create built binaries and metadata files",
     )
     parser.add_argument(
@@ -73,18 +64,10 @@ if __name__ == "__main__":
 
     )
     args = parser.parse_args()
-
-    # whether to recreate existing binaries
     keep = bool(args.keep)
-
-    # output path
     path = Path(args.path)
     path.mkdir(parents=True, exist_ok=True)
-
-    # number of retries
     retries = args.retries
-
-    # C compiler
     cc = get_cc()
 
     # create code.json
@@ -99,9 +82,11 @@ if __name__ == "__main__":
     # build binaries
     build_args = [
         "make-program", ":",
-        f"--appdir={path}",
-        "-fc=ifort", f"-cc={cc}",
-        f"--zip={path}.zip",
+        "--appdir", path,
+        "--double",
+        "-fc", "ifort",
+        "-cc", cc,
+        "--zip", f"{path}.zip",
     ]
     if keep:
         build_args.append("--keep")
