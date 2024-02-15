@@ -1,4 +1,4 @@
-name: Integration testing
+name: MODFLOW 6 integration testing
 on:
   push:
     paths-ignore:
@@ -60,9 +60,9 @@ jobs:
           ese
             ext=""
           fi
-          cp "modflow6/bin/downloaded/*mf6$ext" modflow6/bin
+          cp "modflow6/bin/downloaded/mf6$ext" modflow6/bin
+          cp "modflow6/bin/downloaded/libmf6$ext" modflow6/bin
           cp "modflow6/bin/downloaded/zbud6$ext" modflow6/bin
-          cp "modflow6/bin/downloaded/mf5to6$ext" modflow6/bin
 
           # set execute permissions
           if [[ "$RUNNER_OS" != "Windows" ]]; then
