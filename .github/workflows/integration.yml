@@ -63,6 +63,7 @@ jobs:
           python executables/scripts/build_programs.py -p programs
 
           # move programs where mf6 autotests expect them
+          mkdir modflow6/bin/downloaded
           cp programs/* modflow6/bin/downloaded
 
           # move mf6 binaries to top-level bindir in mf6 repo
@@ -76,9 +77,9 @@ jobs:
             eext=""
             oext=".dylib"
           fi
-          cp "modflow6/bin/downloaded/mf6$eext" modflow6/bin
-          cp "modflow6/bin/downloaded/libmf6$oext" modflow6/bin
-          cp "modflow6/bin/downloaded/zbud6$eext" modflow6/bin
+          cp "programs/mf6$eext" modflow6/bin
+          cp "programs/libmf6$oext" modflow6/bin
+          cp "programs/zbud6$eext" modflow6/bin
 
           # set execute permissions
           if [[ "$RUNNER_OS" != "Windows" ]]; then
