@@ -56,13 +56,18 @@ jobs:
 
           # move mf6 exes to the top-level bindir in the mf6 repo
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            ext=".exe"
-          ese
-            ext=""
+            eext=".exe"
+            oext=".dll"
+          elif [[ "$RUNNER_OS" == "Linux" ]]; then
+            eext=""
+            oext=".so"
+          else
+            eext=""
+            oext=".dylib"
           fi
-          cp "modflow6/bin/downloaded/mf6$ext" modflow6/bin
-          cp "modflow6/bin/downloaded/libmf6$ext" modflow6/bin
-          cp "modflow6/bin/downloaded/zbud6$ext" modflow6/bin
+          cp "modflow6/bin/downloaded/mf6$eext" modflow6/bin
+          cp "modflow6/bin/downloaded/libmf6$oext" modflow6/bin
+          cp "modflow6/bin/downloaded/zbud6$eext" modflow6/bin
 
           # set execute permissions
           if [[ "$RUNNER_OS" != "Windows" ]]; then
