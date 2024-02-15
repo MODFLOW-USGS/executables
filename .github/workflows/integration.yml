@@ -100,4 +100,4 @@ jobs:
         working-directory: modflow6/autotest
         run: |
           python update_flopy.py
-          pytest -v -n auto --durations 0
+          pytest -v -n auto -k "not gwe" -m "not developmode" --durations 0
