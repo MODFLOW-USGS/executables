@@ -54,7 +54,7 @@ jobs:
         run: |
           meson setup builddir --prefix=$(pwd) --libdir=bin -Ddebug=false
           meson install -C builddir
-
+      
       - name: Build executables
         run: |
           # build all programs where mf6 autotests expect them
@@ -98,4 +98,6 @@ jobs:
 
       - name: Test modflow6
         working-directory: modflow6/autotest
-        run: pytest -v -n auto --durations 0
+        run: |
+          python update_flopy.py
+          pytest -v -n auto --durations 0
