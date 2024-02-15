@@ -11,6 +11,7 @@ DBL_PREC_PROGRAMS = ["mf2005", "mflgr", "mfnwt", "mfusg"]
 
 
 def get_fc() -> str:
+    """Determine Intel Fortran compiler to use based on the current platform."""
     return "ifort"
 
 
@@ -71,6 +72,8 @@ if __name__ == "__main__":
     keep = bool(args.keep)
     path = Path(args.path)
     path.mkdir(parents=True, exist_ok=True)
+    zip_path = Path(path).with_suffix(".zip")
+    dp_programs = ",".join(DBL_PREC_PROGRAMS)
     retries = args.retries
     fc = get_fc()
     cc = get_cc()
@@ -83,7 +86,6 @@ if __name__ == "__main__":
             "--verbose",
         ]
     ), "could not make code.json"
-
     assert run_cmd(
         [
             "make-program",
@@ -99,8 +101,6 @@ if __name__ == "__main__":
         ]
         + (["--keep"] if keep else [])
     ), "could not build default precision binaries"
-
-    dp_programs = ",".join(DBL_PREC_PROGRAMS)
     assert run_cmd(
         [
             "make-program",
@@ -114,6 +114,7 @@ if __name__ == "__main__":
             "-cc",
             cc,
             "--zip",
-            f"{path}.zip",
+            str(zip_path),
         ]
     ), f"could not build double precision binaries: {dp_programs}"
+    assert zip_path.is_file(), "could not build distribution zipfile"

@@ -49,6 +49,7 @@ jobs:
           compiler: intel-classic
           version: 2021.7
       
+      # only necessary because we need mf5to6 for mf6 autotests
       - name: Build modflow6
         working-directory: modflow6
         run: |
@@ -81,15 +82,15 @@ jobs:
             sudo chmod +x modflow6/bin/downloaded/*
           fi
       
-      - name: Upload executables
-        uses: actions/upload-artifact@v4
+      - name: Upload programs
+        uses: actions/upload-artifact@v3
         with:
-          name: executables
+          name: programs
           path: ./*.zip
 
       - name: Upload metadata
         if: runner.os == 'Linux'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: metadata
           path: |
