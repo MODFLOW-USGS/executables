@@ -1,4 +1,4 @@
-name: MODFLOW 6 integration testing
+name: Integration testing
 on:
   push:
     paths-ignore:
@@ -48,6 +48,12 @@ jobs:
         with:
           compiler: intel-classic
           version: 2021.7
+      
+      - name: Build modflow6
+        working-directory: modflow6
+        run: |
+          meson setup builddir --prefix=$(pwd) --libdir=bin -Ddebug=false
+          meson install -C builddir
 
       - name: Build executables
         run: |
