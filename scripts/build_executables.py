@@ -90,7 +90,7 @@ if __name__ == "__main__":
     if keep:
         build_args.append("--keep")
     if not run_cmd(build_args):
-        raise RuntimeError("could not build single precision binaries")
+        raise RuntimeError("could not build default precision binaries")
 
     # build double precision binaries
     build_args = [
