@@ -1,2 +1,3 @@
 wheel
-https://github.com/modflowpy/pymake/zipball/master
+https://github.com/modflowpy/pymake/zipball/develop
+https://github.com/MODFLOW-USGS/modflow-devtools/zipball/develop
