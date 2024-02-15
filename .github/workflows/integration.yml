@@ -55,12 +55,12 @@ jobs:
           meson setup builddir --prefix=$(pwd) --libdir=bin -Ddebug=false
           meson install -C builddir
       
-      - name: Build executables
+      - name: Build programs
         run: |
-          # build all programs where mf6 autotests expect them
+          # build programs where mf6 autotests expect them
           python executables/scripts/build_programs.py -p modflow6/bin/downloaded
 
-          # move mf6 exes to the top-level bindir in the mf6 repo
+          # move mf6 binaries to top-level bindir in mf6 repo
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             eext=".exe"
             oext=".dll"

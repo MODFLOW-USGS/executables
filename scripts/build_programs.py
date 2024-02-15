@@ -7,6 +7,11 @@ from pathlib import Path
 from modflow_devtools.ostags import get_modflow_ostag
 
 DEFAULT_RETRIES = 3
+DBL_PREC_PROGRAMS = ["mf2005", "mflgr", "mfnwt", "mfusg"]
+
+
+def get_fc() -> str:
+    return "ifort"
 
 
 def get_cc() -> str:
@@ -61,46 +66,54 @@ if __name__ == "__main__":
         required=False,
         default=DEFAULT_RETRIES,
         help="Number of times to retry a failed build",
-
     )
     args = parser.parse_args()
     keep = bool(args.keep)
     path = Path(args.path)
     path.mkdir(parents=True, exist_ok=True)
     retries = args.retries
+    fc = get_fc()
     cc = get_cc()
 
-    # create code.json
-    if not run_cmd([
-        "make-code-json",
-        "-f",
-        str(path / "code.json"),
-        "--verbose",
-    ]):
-        raise RuntimeError(f"could not make code.json")
+    assert run_cmd(
+        [
+            "make-code-json",
+            "-f",
+            str(path / "code.json"),
+            "--verbose",
+        ]
+    ), "could not make code.json"
 
-    # build single precision binaries
-    build_args = [
-        "make-program", ":",
-        "--appdir", path,
-        "-fc", "ifort",
-        "-cc", cc,
-        "--zip", f"{path}.zip",
-    ]
-    if keep:
-        build_args.append("--keep")
-    if not run_cmd(build_args):
-        raise RuntimeError("could not build default precision binaries")
+    assert run_cmd(
+        [
+            "make-program",
+            ":",
+            "--appdir",
+            path,
+            "-fc",
+            fc,
+            "-cc",
+            cc,
+            "--zip",
+            f"{path}.zip",
+        ]
+        + (["--keep"] if keep else [])
+    ), "could not build default precision binaries"
 
-    # build double precision binaries
-    build_args = [
-        "make-program", "mf2005,mflgr,mfnwt,mfusg",
-        "--appdir", path,
-        "--double",
-        "--keep",
-        "-fc", "ifort",
-        "-cc", cc,
-        "--zip", f"{path}.zip",
-    ]
-    if not run_cmd(build_args):
-        raise RuntimeError("could not build double precision binaries")
+    dp_programs = ",".join(DBL_PREC_PROGRAMS)
+    assert run_cmd(
+        [
+            "make-program",
+            dp_programs,
+            "--appdir",
+            path,
+            "--double",
+            "--keep",
+            "-fc",
+            fc,
+            "-cc",
+            cc,
+            "--zip",
+            f"{path}.zip",
+        ]
+    ), f"could not build double precision binaries: {dp_programs}"
