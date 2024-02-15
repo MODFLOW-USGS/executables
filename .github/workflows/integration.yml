@@ -49,39 +49,41 @@ jobs:
           compiler: intel-classic
           version: 2021.7
 
-      - name: Build modflow6
-        working-directory: modflow6
-        run: |
-          meson setup builddir --prefix=$(pwd) --libdir=bin -Ddebug=false
-          meson install -C builddir
-
-      - name: Show meson build log
-        if: failure()
-        working-directory: modflow6
-        run: cat builddir/meson-logs/meson-log.txt
-      
-      - name: Unit test modflow6
-        working-directory: modflow6
-        run: meson test --verbose --no-rebuild -C builddir
-
-      - name: Update FloPy
-        working-directory: modflow6/autotest
-        run: python update_flopy.py
-
-      - name: Get executables
-        working-directory: modflow6/autotest
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: pytest -v -s get_exes.py
-
       - name: Build executables
-        working-directory: executables/scripts
-        run: python build_executables.py -p ../../modflow6/bin/downloaded
-        
-      - name: Set executable permission
-        if: runner.os != 'Windows'
-        working-directory: modflow6/bin/downloaded
-        run: sudo chmod +x *
+        run: |
+          # build all programs where mf6 autotests expect them
+          python executables/scripts/build_programs.py -p modflow6/bin/downloaded
+
+          # move mf6 exes to the top-level bindir in the mf6 repo
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            ext=".exe"
+          ese
+            ext=""
+          fi
+          cp "modflow6/bin/downloaded/*mf6$ext" modflow6/bin
+          cp "modflow6/bin/downloaded/zbud6$ext" modflow6/bin
+          cp "modflow6/bin/downloaded/mf5to6$ext" modflow6/bin
+
+          # set execute permissions
+          if [[ "$RUNNER_OS" != "Windows" ]]; then
+            sudo chmod +x modflow6/bin/*
+            sudo chmod +x modflow6/bin/downloaded/*
+          fi
+      
+      - name: Upload executables
+        uses: actions/upload-artifact@v4
+        with:
+          name: executables
+          path: ./*.zip
+
+      - name: Upload metadata
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: metadata
+          path: |
+            ./code.json
+            ./code.md
 
       - name: Test modflow6
         working-directory: modflow6/autotest

@@ -103,4 +103,4 @@ if __name__ == "__main__":
         "--zip", f"{path}.zip",
     ]
     if not run_cmd(build_args):
-        raise RuntimeError("could not build single precision binaries")
+        raise RuntimeError("could not build double precision binaries")

@@ -54,7 +54,7 @@ jobs:
           pip list
 
       - name: Build executables
-        run: python scripts/build_executables.py
+        run: python scripts/build_programs.py
 
       - name: Upload distribution archive
         uses: actions/upload-artifact@v3

@@ -57,6 +57,9 @@ target/
 # PyCharm
 .idea/
 
-# files in the examples directory
+# Local testing folders
 temp/
+bin/
 
+# Python virtual environments
+venv/
