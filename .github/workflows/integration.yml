@@ -58,8 +58,12 @@ jobs:
       
       - name: Build programs
         run: |
-          # build programs where mf6 autotests expect them
-          python executables/scripts/build_programs.py -p modflow6/bin/downloaded
+          # build programs
+          mkdir programs
+          python executables/scripts/build_programs.py -p programs
+
+          # move programs where mf6 autotests expect them
+          cp programs/* modflow6/bin/downloaded
 
           # move mf6 binaries to top-level bindir in mf6 repo
           if [[ "$RUNNER_OS" == "Windows" ]]; then
@@ -86,7 +90,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: programs
-          path: ./*.zip
+          path: programs.zip
 
       - name: Upload metadata
         if: runner.os == 'Linux'
