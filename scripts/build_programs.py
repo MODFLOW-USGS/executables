@@ -1,6 +1,6 @@
 import argparse
-import sys
 import subprocess
+import sys
 import textwrap
 from pathlib import Path
 
@@ -112,9 +112,8 @@ if __name__ == "__main__":
     assert run_cmd(
         [
             "make-code-json",
-            "-ad", str(path),
-            "-f",
-            str(path / "code.json"),
+            "-ad",
+            str(path),
             "--verbose",
         ]
     ), "could not make code.json"
