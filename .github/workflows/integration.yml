@@ -71,7 +71,7 @@ jobs:
 
           # move programs where mf6 autotests expect them
           mkdir modflow6/bin/downloaded
-          cp ostag/* modflow6/bin/downloaded
+          cp $ostag/* modflow6/bin/downloaded
 
           # move mf6 binaries to top-level bindir in mf6 repo
           if [[ "$RUNNER_OS" == "Windows" ]]; then
