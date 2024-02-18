@@ -106,4 +106,5 @@ jobs:
         working-directory: modflow6/autotest
         run: |
           python update_flopy.py
-          pytest -v -n auto -k "not gwe" -m "not developmode" --durations 0
+          # when mf6.5.0 is released with new models and exes dist is updatd, remove filters below
+          pytest -v -n auto -k "not gwe and not swf and not prt" -m "not developmode" --durations 0
