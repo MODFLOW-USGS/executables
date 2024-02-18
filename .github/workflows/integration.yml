@@ -56,15 +56,22 @@ jobs:
           meson setup builddir --prefix=$(pwd) --libdir=bin -Ddebug=false
           meson install -C builddir
       
+      - name: Get OS tag
+        id: ostag
+        run: |
+          ostag=$(python -c "from modflow_devtools.ostags import get_ostag; print(get_ostag())")
+          echo "ostag=$ostag" >> $GITHUB_OUTPUT
+
       - name: Build programs
         run: |
           # build programs
-          mkdir programs
-          python executables/scripts/build_programs.py -p programs
+          ostag="${{ steps.ostag.outputs.ostag }}"
+          mkdir $ostag
+          python executables/scripts/build_programs.py -p $ostag
 
           # move programs where mf6 autotests expect them
           mkdir modflow6/bin/downloaded
-          cp programs/* modflow6/bin/downloaded
+          cp $ostag/* modflow6/bin/downloaded
 
           # move mf6 binaries to top-level bindir in mf6 repo
           if [[ "$RUNNER_OS" == "Windows" ]]; then
@@ -77,9 +84,9 @@ jobs:
             eext=""
             oext=".dylib"
           fi
-          cp "programs/mf6$eext" modflow6/bin
-          cp "programs/libmf6$oext" modflow6/bin
-          cp "programs/zbud6$eext" modflow6/bin
+          cp "$ostag/mf6$eext" modflow6/bin
+          cp "$ostag/libmf6$oext" modflow6/bin
+          cp "$ostag/zbud6$eext" modflow6/bin
 
           # set execute permissions
           if [[ "$RUNNER_OS" != "Windows" ]]; then
@@ -90,8 +97,8 @@ jobs:
       - name: Upload programs
         uses: actions/upload-artifact@v3
         with:
-          name: programs
-          path: programs.zip
+          name: ${{ steps.ostag.outputs.ostag }}
+          path: ${{ steps.ostag.outputs.ostag }}.zip
 
       - name: Upload metadata
         if: runner.os == 'Linux'
@@ -106,4 +113,5 @@ jobs:
         working-directory: modflow6/autotest
         run: |
           python update_flopy.py
-          pytest -v -n auto -k "not gwe" -m "not developmode" --durations 0
+          # when mf6.5.0 is released with new models and exes dist is updatd, remove filters below
+          pytest -v -n auto -k "not gwe and not swf and not prt" -m "not developmode" --durations 0
