@@ -7,7 +7,7 @@ from pathlib import Path
 from modflow_devtools.ostags import get_modflow_ostag
 
 DEFAULT_RETRIES = 3
-DBL_PREC_PROGRAMS = ["mf2005", "mflgr", "mfnwt", "mfusg"]
+DPRECISION_EXES = ["mf2005", "mflgr", "mfnwt", "mfusg"]
 
 
 def get_fc() -> str:
@@ -73,19 +73,11 @@ if __name__ == "__main__":
     path = Path(args.path)
     path.mkdir(parents=True, exist_ok=True)
     zip_path = Path(path).with_suffix(".zip")
-    dp_programs = ",".join(DBL_PREC_PROGRAMS)
+    dp_exes = ",".join(DPRECISION_EXES)
     retries = args.retries
     fc = get_fc()
     cc = get_cc()
 
-    assert run_cmd(
-        [
-            "make-code-json",
-            "-f",
-            str(path / "code.json"),
-            "--verbose",
-        ]
-    ), "could not make code.json"
     assert run_cmd(
         [
             "make-program",
@@ -104,7 +96,7 @@ if __name__ == "__main__":
     assert run_cmd(
         [
             "make-program",
-            dp_programs,
+            dp_exes,
             "--appdir",
             path,
             "--double",
@@ -116,5 +108,15 @@ if __name__ == "__main__":
             "--zip",
             str(zip_path),
         ]
-    ), f"could not build double precision binaries: {dp_programs}"
+    ), f"could not build double precision binaries: {dp_exes}"
+    assert run_cmd(
+        [
+            "make-code-json",
+            "-ad", str(path),
+            "-f",
+            str(path / "code.json"),
+            "--verbose",
+        ]
+    ), "could not make code.json"
     assert zip_path.is_file(), "could not build distribution zipfile"
+    print(f"created distribution zipfile: {zip_path}")
