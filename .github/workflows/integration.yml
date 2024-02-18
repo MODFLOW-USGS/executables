@@ -90,8 +90,8 @@ jobs:
       - name: Upload programs
         uses: actions/upload-artifact@v3
         with:
-          name: programs-${{ runner.os }}
-          path: programs-${{ runner.os }}.zip
+          name: programs-${{ matrix.os }}
+          path: programs-${{ matrix.os }}.zip
 
       - name: Upload metadata
         if: runner.os == 'Linux'
