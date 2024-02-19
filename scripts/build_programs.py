@@ -115,6 +115,8 @@ if __name__ == "__main__":
             "-ad",
             str(path),
             "--verbose",
+            "--zip",
+            str(zip_path)
         ]
     ), "could not make code.json"
     assert zip_path.is_file(), "could not build distribution zipfile"
