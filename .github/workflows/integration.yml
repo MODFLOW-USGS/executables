@@ -1,16 +1,6 @@
 name: Integration testing
 on:
-  push:
-    paths-ignore:
-      - '**.md'
-  pull_request:
-    branches:
-      - master
-      - develop
-    paths-ignore:
-      - '**.md'
-  schedule:
-    - cron: '0 6 * * *' # run at 6 AM UTC every day
+  workflow_dispatch:
 jobs:
   test_modflow:
     name: MODFLOW 6 integration tests
