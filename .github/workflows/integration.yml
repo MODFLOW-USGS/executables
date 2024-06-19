@@ -48,6 +48,14 @@ jobs:
             echo "LDFLAGS=$ldflags" >> $GITHUB_ENV
           fi
 
+      - name: Hide dylibs (macOS)
+        if: matrix.os == 'macos-14'
+        run: |
+          version="12"
+          libpath="/opt/homebrew/opt/gcc@$version/lib/gcc/$version"
+          mv $libpath/libgfortran.5.dylib $libpath/libgfortran.5.dylib.bak 
+          mv $libpath/libquadmath.0.dylib $libpath/libquadmath.0.dylib.bak
+
       # only necessary because we need mf5to6 for mf6 autotests
       - name: Build modflow6
         working-directory: modflow6
