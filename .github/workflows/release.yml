@@ -47,6 +47,7 @@ jobs:
           libpath="/opt/homebrew/opt/gcc@$version/lib/gcc/$version"
           mv $libpath/libgfortran.5.dylib $libpath/libgfortran.5.dylib.bak 
           mv $libpath/libquadmath.0.dylib $libpath/libquadmath.0.dylib.bak
+          mv $libpath/libstdc++.6.dylib $libpath/libstdc++.6.dylib.bak
 
       - name: Setup Xcode CLT (mac)
         uses: maxim-lobanov/setup-xcode@v1

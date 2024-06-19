@@ -55,6 +55,7 @@ jobs:
           libpath="/opt/homebrew/opt/gcc@$version/lib/gcc/$version"
           mv $libpath/libgfortran.5.dylib $libpath/libgfortran.5.dylib.bak 
           mv $libpath/libquadmath.0.dylib $libpath/libquadmath.0.dylib.bak
+          mv $libpath/libstdc++.6.dylib $libpath/libstdc++.6.dylib.bak
 
       # only necessary because we need mf5to6 for mf6 autotests
       - name: Build modflow6
