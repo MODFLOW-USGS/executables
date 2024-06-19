@@ -104,6 +104,10 @@ jobs:
             sudo chmod +x modflow6/bin/*
             sudo chmod +x modflow6/bin/downloaded/*
           fi
+
+      - name: Check linked libs (macOS)
+        if: matrix.os == 'macos-14'
+        run: find $ostag -perm +111 -type f | xargs -I{} sh -c "otool -L {}"
       
       - name: Upload programs
         uses: actions/upload-artifact@v3
