@@ -62,7 +62,7 @@ jobs:
         run: |
           setupargs="--prefix=$(pwd) --libdir=bin -Ddebug=false"
           if [[ "${{ matrix.os }}" == "macos-14" ]]; then
-            setupargs="-Doptimization=1"
+            setupargs="$setupargs -Doptimization=1"
           fi
           meson setup builddir $setupargs
           meson install -C builddir

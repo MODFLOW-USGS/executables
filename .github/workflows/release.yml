@@ -78,6 +78,10 @@ jobs:
       - name: Build programs
         run: python scripts/build_programs.py
 
+      - name: Build MF6 with optimization=1
+        if: matrix.os == 'macos-14'
+        run: make-program mf6 --zip macarm.zip --fflags='-O1'
+
       - name: Upload distribution archive
         uses: actions/upload-artifact@v3
         with:
