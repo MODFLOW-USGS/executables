@@ -7,8 +7,6 @@ on:
     branches:
       - master
   workflow_dispatch:
-env:
-  DIST: dist
 jobs:
   build:
     name: Build distribution
@@ -16,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, macos-latest, windows-2019]
+        os: [ubuntu-22.04, macos-13, macos-14, windows-2019]
     defaults:
       run:
         shell: bash
@@ -25,11 +23,35 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup Intel fortran
+      - name: Setup ${{ contains(fromJSON('["macos-14"]'), matrix.os) && 'gcc' || 'intel-classic' }} ${{ contains(fromJSON('["macos-14"]'), matrix.os) && 12 || 2021.7 }}
         uses: fortran-lang/setup-fortran@v1
         with:
-          compiler: intel-classic
-          version: 2021.7
+          compiler: ${{ contains(fromJSON('["macos-14"]'), matrix.os) && 'gcc' || 'intel-classic' }}
+          version: ${{ contains(fromJSON('["macos-14"]'), matrix.os) && 12 || 2021.7 }}
+
+      - name: Set LDFLAGS (ARM mac)
+        if: matrix.os == 'macos-14'
+        run: |
+          os_ver=$(sw_vers -productVersion | cut -d'.' -f1)
+          if (( "$os_ver" > 12 )); then
+            ldflags="$LDFLAGS -Wl,-ld_classic"
+            echo "LDFLAGS=$ldflags" >> $GITHUB_ENV
+          fi
+
+      - name: Hide dylibs (ARM mac)
+        if: matrix.os == 'macos-14'
+        run: |
+          version="12"
+          libpath="/opt/homebrew/opt/gcc@$version/lib/gcc/$version"
+          mv $libpath/libgfortran.5.dylib $libpath/libgfortran.5.dylib.bak 
+          mv $libpath/libquadmath.0.dylib $libpath/libquadmath.0.dylib.bak
+          mv $libpath/libstdc++.6.dylib $libpath/libstdc++.6.dylib.bak
+
+      - name: Setup Xcode CLT (mac)
+        uses: maxim-lobanov/setup-xcode@v1
+        if: runner.os == 'macOS'
+        with:
+          xcode-version: "14.3.1"
 
       - uses: oprypin/find-latest-tag@v1
         id: tag
@@ -53,20 +75,44 @@ jobs:
           pip install -r requirements.txt
           pip list
 
+      - name: Get OS tag
+        id: ostag
+        run: |
+          ostag=$(python -c "from modflow_devtools.ostags import get_ostag; print(get_ostag())")
+          echo "ostag=$ostag" >> $GITHUB_OUTPUT
+
       - name: Build programs
-        run: python scripts/build_programs.py
+        uses: nick-fields/retry@v3
+        with:
+          shell: bash
+          timeout_minutes: 40
+          command: |
+            ostag="${{ steps.ostag.outputs.ostag }}"
+            mkdir $ostag
+            make-program : --appdir $ostag --zip $ostag.zip --verbose
+            make-program mf2005,mflgr,mfnwt,mfusg --appdir $ostag --double --keep --zip $ostag.zip --verbose
+            if [[ "${{ matrix.os }}" == "macos-14" ]]; then
+              make-program mf6 --appdir $ostag --keep --zip $ostag.zip --verbose --fflags='-O1'
+            fi
+            make-code-json --appdir $ostag --zip $ostag.zip --verbose
+
+      - name: Check linked libs (ARM mac)
+        if: matrix.os == 'macos-14'
+        run: |
+          ostag="${{ steps.ostag.outputs.ostag }}"
+          find $ostag -perm +111 -type f | xargs -I{} sh -c "otool -L {}"
 
       - name: Upload distribution archive
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ env.DIST }}
+          name: ${{ steps.ostag.outputs.ostag }}
           path: ./*.zip
 
       - name: Upload distribution metadata
         if: runner.os == 'Linux'
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ env.DIST }}
+          name: ${{ steps.ostag.outputs.ostag }}
           path: |
             ./code.json
             ./code.md
@@ -93,6 +139,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install https://github.com/modflowpy/pymake/zipball/master
+          pip install https://github.com/MODFLOW-USGS/modflow-devtools/zipball/develop
 
       - name: Get last release tag
         id: last-tag
@@ -112,14 +159,20 @@ jobs:
           echo "$repo current version is $current"
           echo "$repo next version is $next"
 
+      - name: Get OS tag
+        id: ostag
+        run: |
+          ostag=$(python -c "from modflow_devtools.ostags import get_ostag; print(get_ostag())")
+          echo "ostag=$ostag" >> $GITHUB_OUTPUT
+
       - name: Download distribution
         uses: actions/download-artifact@v3
         with:
-          name: ${{ env.DIST }}
-          path: ${{ env.DIST }}
+          name: ${{ steps.ostag.outputs.ostag }}
+          path: ${{ steps.ostag.outputs.ostag }}
 
       - name: List distribution files
-        run: ls -l ${{ env.DIST }}
+        run: ls -l ${{ steps.ostag.outputs.ostag }}
 
       - name: Create release body header
         shell: python
@@ -134,7 +187,7 @@ jobs:
 
       - name: Build release body
         run: |
-          cat Header.md ${{ env.DIST }}/code.md > BodyFile.md
+          cat Header.md ${{ steps.ostag.outputs.ostag }}/code.md > BodyFile.md
           cat BodyFile.md
 
       # interactive debugging
@@ -147,8 +200,8 @@ jobs:
         id: update-readme
         run: |
           # update readme from metadata
-          cp ${{ env.DIST }}/code.md code.md
-          cp ${{ env.DIST }}/code.json code.json
+          cp ${{ steps.ostag.outputs.ostag }}/code.md code.md
+          cp ${{ steps.ostag.outputs.ostag }}/code.json code.json
           python scripts/update_readme.py
           
           # determine whether changes need to be committed
@@ -195,7 +248,7 @@ jobs:
           tag: ${{ steps.next-tag.outputs.tag }}
           name: "MODFLOW and related programs binary executables"
           bodyFile: "./BodyFile.md"
-          artifacts: "${{ env.DIST }}/*"
+          artifacts: "${{ steps.ostag.outputs.ostag }}/*"
           draft: false
           allowUpdates: true
           token: ${{ secrets.GITHUB_TOKEN }}
