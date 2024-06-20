@@ -75,11 +75,24 @@ jobs:
           echo "ostag=$ostag" >> $GITHUB_OUTPUT
 
       - name: Build programs
+        uses: nick-fields/retry@v3
+        with:
+          shell: bash
+          timeout_seconds: 3
+          command: |
+            ostag="${{ steps.ostag.outputs.ostag }}"
+            mkdir $ostag
+            make-program : --appdir $ostag --zip $ostag.zip --verbose
+            make-program mf2005,mflgr,mfnwt,mfusg --appdir $ostag --double --keep --zip $ostag.zip --verbose
+            if [[ "${{ matrix.os }}" == "macos-14" ]]; then
+              make-program mf6 --appdir $ostag --keep --zip $ostag.zip --verbose --fflags='-O1'
+            fi
+            make-code-json --appdir $ostag --zip $ostag.zip --verbose
+
+      - name: Move programs
         run: |
           # build programs
           ostag="${{ steps.ostag.outputs.ostag }}"
-          mkdir $ostag
-          python executables/scripts/build_programs.py -p $ostag
 
           # move programs where mf6 autotests expect them
           mkdir modflow6/bin/downloaded

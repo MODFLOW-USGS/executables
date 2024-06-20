@@ -7,8 +7,6 @@ on:
     branches:
       - master
   workflow_dispatch:
-env:
-  DIST: dist
 jobs:
   build:
     name: Build distribution
@@ -84,14 +82,19 @@ jobs:
           echo "ostag=$ostag" >> $GITHUB_OUTPUT
 
       - name: Build programs
-        run: |
-          ostag="${{ steps.ostag.outputs.ostag }}"
-          mkdir $ostag
-          python scripts/build_programs.py -p $ostag
-
-      - name: Build MF6 with -O1 (ARM mac)
-        if: matrix.os == 'macos-14'
-        run: make-program mf6 --zip macarm.zip --fflags='-O1'
+        uses: nick-fields/retry@v3
+        with:
+          shell: bash
+          timeout_seconds: 3
+          command: |
+            ostag="${{ steps.ostag.outputs.ostag }}"
+            mkdir $ostag
+            make-program : --appdir $ostag --zip $ostag.zip --verbose
+            make-program mf2005,mflgr,mfnwt,mfusg --appdir $ostag --double --keep --zip $ostag.zip --verbose
+            if [[ "${{ matrix.os }}" == "macos-14" ]]; then
+              make-program mf6 --appdir $ostag --keep --zip $ostag.zip --verbose --fflags='-O1'
+            fi
+            make-code-json --appdir $ostag --zip $ostag.zip --verbose
 
       - name: Check linked libs (ARM mac)
         if: matrix.os == 'macos-14'
@@ -102,7 +105,7 @@ jobs:
       - name: Upload distribution archive
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ env.DIST }}
+          name: ${{ steps.ostag.outputs.ostag }}
           path: ./*.zip
 
       - name: Upload distribution metadata
