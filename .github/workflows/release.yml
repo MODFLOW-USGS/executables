@@ -98,6 +98,11 @@ jobs:
             fi
             make-code-json --appdir $ostag --zip $ostag.zip --verbose
 
+      - name: Show programs
+        run: |
+          ostag="${{ steps.ostag.outputs.ostag }}"
+          ls $ostag
+
       - name: Check linked libs (ARM mac)
         if: matrix.os == 'macos-14'
         run: |
