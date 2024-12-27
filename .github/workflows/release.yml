@@ -16,7 +16,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-13, macos-14, windows-2019]
+        # os: [ubuntu-22.04, macos-13, macos-14, windows-2019]
+        os: [macos-13]
     defaults:
       run:
         shell: bash
@@ -78,6 +79,10 @@ jobs:
         run: |
           ostag=$(python -c "from modflow_devtools.ostags import get_ostag; print(get_ostag())")
           echo "ostag=$ostag" >> $GITHUB_OUTPUT
+
+      - name: Setup tmate session
+        if: ${{ matrix.os}} == 'macos-13'
+        uses: mxschmitt/action-tmate@v3
 
       - name: Build programs
         uses: nick-fields/retry@v3
