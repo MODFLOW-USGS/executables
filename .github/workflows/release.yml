@@ -26,11 +26,11 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup ${{ contains(fromJSON('["macos-14"]'), matrix.os) && 'gcc' || 'intel-classic' }} ${{ contains(fromJSON('["macos-14"]'), matrix.os) && 12 || 2021.7 }}
+      - name: Setup ${{ contains(fromJSON('["macos"]'), matrix.os) && 'gcc' || 'intel-classic' }} ${{ contains(fromJSON('["macos"]'), matrix.os) && 12 || 2021.7 }}
         uses: fortran-lang/setup-fortran@v1
         with:
-          compiler: ${{ contains(fromJSON('["macos-14"]'), matrix.os) && 'gcc' || 'intel-classic' }}
-          version: ${{ contains(fromJSON('["macos-14"]'), matrix.os) && 12 || 2021.7 }}
+          compiler: ${{ contains(fromJSON('["macos"]'), matrix.os) && 'gcc' || 'intel-classic' }}
+          version: ${{ contains(fromJSON('["macos"]'), matrix.os) && 12 || 2021.7 }}
 
       - name: Set LDFLAGS (ARM mac)
         run: |
@@ -38,7 +38,7 @@ jobs:
           echo "LDFLAGS=$ldflags" >> $GITHUB_ENV
 
       - name: Hide dylibs (ARM mac)
-        if: matrix.os == 'macos-14'
+        if: runner.os == 'macOS'
         run: |
           version="12"
           libpath="/opt/homebrew/opt/gcc@$version/lib/gcc/$version"
@@ -80,9 +80,9 @@ jobs:
           ostag=$(python -c "from modflow_devtools.ostags import get_ostag; print(get_ostag())")
           echo "ostag=$ostag" >> $GITHUB_OUTPUT
 
-      - name: Setup tmate session
-        if: ${{ matrix.os}} == 'macos-13'
-        uses: mxschmitt/action-tmate@v3
+      # - name: Setup tmate session
+      #   if: ${{ matrix.os}} == 'macos-13'
+      #   uses: mxschmitt/action-tmate@v3
 
       - name: Build programs
         uses: nick-fields/retry@v3
@@ -94,7 +94,7 @@ jobs:
             mkdir $ostag
             make-program : --appdir $ostag --zip $ostag.zip --verbose
             make-program mf2005,mflgr,mfnwt,mfusg --appdir $ostag --double --keep --zip $ostag.zip --verbose
-            if [[ "${{ matrix.os }}" == "macos-14" ]]; then
+            if [[ "${{ runner.os }}" == "macOS" ]]; then
               make-program mf6 --appdir $ostag --keep --zip $ostag.zip --verbose --fflags='-O1'
             fi
             make-code-json --appdir $ostag --zip $ostag.zip --verbose
@@ -104,8 +104,8 @@ jobs:
           ostag="${{ steps.ostag.outputs.ostag }}"
           ls $ostag
 
-      - name: Check linked libs (ARM mac)
-        if: matrix.os == 'macos-14'
+      - name: Check linked libs (macOS)
+        if: runner.os == 'macOS'
         run: |
           ostag="${{ steps.ostag.outputs.ostag }}"
           find $ostag -perm +111 -type f | xargs -I{} sh -c "otool -L {}"
