@@ -9,6 +9,8 @@ on:
   workflow_dispatch:
 env:
   DIST: dist
+  GCC_V: 12
+  IFORT_V: 2021.7
 jobs:
   build:
     name: Build distribution
@@ -23,14 +25,20 @@ jobs:
         shell: bash
 
     steps:
+      - name: Locate libgfortran
+        run: |
+          sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.locate.plist
+          sleep 300
+          locate libgfortran
+
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup ${{ contains(fromJSON('["macos"]'), matrix.os) && 'gcc' || 'intel-classic' }} ${{ contains(fromJSON('["macos"]'), matrix.os) && 12 || 2021.7 }}
+      - name: Setup ${{ runner.os == 'macOS' && 'gcc' || 'intel-classic' }} ${{ runner.os == 'macOS' && env.GCC_V || env.IFORT_V }}
         uses: fortran-lang/setup-fortran@v1
         with:
-          compiler: ${{ contains(fromJSON('["macos"]'), matrix.os) && 'gcc' || 'intel-classic' }}
-          version: ${{ contains(fromJSON('["macos"]'), matrix.os) && 12 || 2021.7 }}
+          compiler: ${{ runner.os == 'macOS' && 'gcc' || 'intel-classic' }}
+          version: ${{ runner.os == 'macOS' && env.GCC_V || env.IFORT_V }}
 
       - name: Set LDFLAGS (ARM mac)
         run: |
@@ -40,8 +48,12 @@ jobs:
       - name: Hide dylibs (ARM mac)
         if: runner.os == 'macOS'
         run: |
-          version="12"
-          libpath="/opt/homebrew/opt/gcc@$version/lib/gcc/$version"
+          os_ver=$(sw_vers -productVersion | cut -d'.' -f1)
+          if (( "$os_ver" > 13 )); then
+            libpath="/opt/homebrew/opt/gcc@${{ env.GCC_V }}/lib/gcc/${{ env.GCC_V }}"
+          else
+            locate libgfortran
+          fi
           mv $libpath/libgfortran.5.dylib $libpath/libgfortran.5.dylib.bak 
           mv $libpath/libquadmath.0.dylib $libpath/libquadmath.0.dylib.bak
           mv $libpath/libstdc++.6.dylib $libpath/libstdc++.6.dylib.bak
