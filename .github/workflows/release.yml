@@ -25,12 +25,6 @@ jobs:
         shell: bash
 
     steps:
-      - name: Locate libgfortran
-        run: |
-          sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.locate.plist
-          sleep 300
-          locate libgfortran
-
       - name: Checkout repo
         uses: actions/checkout@v4
 
@@ -52,7 +46,7 @@ jobs:
           if (( "$os_ver" > 13 )); then
             libpath="/opt/homebrew/opt/gcc@${{ env.GCC_V }}/lib/gcc/${{ env.GCC_V }}"
           else
-            locate libgfortran
+            libpath="/usr/local/lib/gcc/${{ env.GCC_V }}"
           fi
           mv $libpath/libgfortran.5.dylib $libpath/libgfortran.5.dylib.bak 
           mv $libpath/libquadmath.0.dylib $libpath/libquadmath.0.dylib.bak
