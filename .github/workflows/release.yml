@@ -38,7 +38,7 @@ jobs:
         uses: fortran-lang/setup-fortran@v1
         with:
           compiler: 'intel-classic'
-          version: env.IFORT_V
+          version: ${{ env.IFORT_V }}
 
       # - name: Set LDFLAGS (ARM mac)
       #   run: |
