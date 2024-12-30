@@ -65,7 +65,7 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1
         if: runner.os == 'macOS'
         with:
-          xcode-version: "15.0.1"
+          xcode-version: "latest"
 
       - uses: oprypin/find-latest-tag@v1
         id: tag
