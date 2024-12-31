@@ -10,7 +10,7 @@ on:
 env:
   DIST: dist
   GCC_V: 12
-  IFORT_V: "2021.7.1"
+  IFORT_V: 2021.6
 jobs:
   build:
     name: Build distribution
