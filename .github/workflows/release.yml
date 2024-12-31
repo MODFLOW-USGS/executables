@@ -67,11 +67,11 @@ jobs:
       #       mv $libpath/libgcc_s.1.1.dylib $libpath/libgcc_s.1.1.dylib.bak
       #     fi
 
-      # - name: Setup Xcode CLT (mac)
-      #   uses: maxim-lobanov/setup-xcode@v1
-      #   if: runner.os == 'macOS'
-      #   with:
-      #     xcode-version: "latest"
+      - name: Setup Xcode CLT (mac)
+        uses: maxim-lobanov/setup-xcode@v1
+        if: runner.os == 'macOS'
+        with:
+          xcode-version: "latest"
 
       - uses: oprypin/find-latest-tag@v1
         id: tag
@@ -100,6 +100,16 @@ jobs:
         run: |
           ostag=$(python -c "from modflow_devtools.ostags import get_ostag; print(get_ostag())")
           echo "ostag=$ostag" >> $GITHUB_OUTPUT
+
+      - name: Build gridgen
+        uses: nick-fields/retry@v3
+        with:
+          shell: bash
+          timeout_minutes: 40
+          command: |
+            ostag="${{ steps.ostag.outputs.ostag }}"
+            mkdir $ostag
+            make-program gridgen --appdir $ostag --zip $ostag.zip --verbose
 
       - name: Setup tmate session
         if: ${{ matrix.os}} == 'macos-13'
