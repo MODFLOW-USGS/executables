@@ -135,14 +135,14 @@ jobs:
           find $ostag -perm +111 -type f | xargs -I{} sh -c "otool -L {}"
       
       - name: Upload programs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.ostag.outputs.ostag }}
           path: ${{ steps.ostag.outputs.ostag }}.zip
 
       - name: Upload metadata
         if: runner.os == 'Linux'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.ostag.outputs.ostag }}
           path: |
