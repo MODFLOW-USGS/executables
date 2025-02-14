@@ -111,7 +111,7 @@ jobs:
       - name: Upload distribution archive
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.DIST }}
+          name: ${{ env.DIST }}-${{ matrix.os }}
           path: ./*.zip
 
       - name: Upload distribution metadata
@@ -168,7 +168,8 @@ jobs:
       - name: Download distribution
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.DIST }} 
+          pattern: ${{ env.DIST }}-*
+          merge-multiple: true
           path: ${{ env.DIST }} 
 
       - name: List distribution files
